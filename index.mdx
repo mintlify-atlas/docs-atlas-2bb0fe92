@@ -1,97 +1,231 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+mode: "custom"
 ---
 
-## Setting up
+<div className="relative overflow-hidden">
+  {/* Hero Section */}
+  <div className="relative bg-gradient-to-br from-[#0f1117] via-[#1a1d27] to-[#0f1117] dark:bg-gradient-to-br dark:from-[#0f1117] dark:via-[#1a1d27] dark:to-[#0f1117] py-20 px-4">
+    <div className="max-w-6xl mx-auto">
+      <div className="flex flex-col lg:flex-row items-center gap-12">
+        <div className="flex-1 text-center lg:text-left">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-100 dark:text-gray-100 mb-6">
+            Stop "Works on My Machine" Problems
+          </h1>
+          <p className="text-lg sm:text-xl text-gray-400 dark:text-gray-400 mb-8 max-w-2xl mx-auto lg:mx-0">
+            Fast, declarative environment validation for tools, versions, environment variables, and ports. Built in Rust for speed and reliability.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start flex-wrap">
+            <a 
+              href="/quickstart" 
+              className="inline-flex items-center justify-center px-8 py-3 text-base font-semibold rounded-lg bg-[#94cb04] text-[#0f1117] hover:bg-[#a8df05] transition-colors no-underline"
+            >
+              Get Started
+            </a>
+            <a 
+              href="/installation" 
+              className="inline-flex items-center justify-center px-8 py-3 text-base font-semibold rounded-lg border-2 border-gray-600 dark:border-gray-600 bg-transparent text-gray-100 dark:text-gray-100 hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors no-underline"
+            >
+              Installation Guide
+            </a>
+          </div>
+        </div>
+        <div className="flex-1 hidden lg:block">
+          <div className="bg-[#1a1d27] dark:bg-[#1a1d27] rounded-xl border border-[#27272a] dark:border-[#27272a] p-6 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <pre className="text-sm text-gray-300 dark:text-gray-300 overflow-x-auto"><code>{`$ envcheck
 
-Get your documentation site up and running in minutes.
+Running environment checks...
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+✓ node 18.17.0 found
+✓ docker found
+✗ DATABASE_URL is not set
+  Set DATABASE_URL environment variable
+✓ Port 3000 is available
+✓ .env exists
 
-## Make it yours
+--- 1 issue(s) found. Fix them to continue.`}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-Design a docs site that looks great and empowers your users.
+  {/* Quick Start Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">
+      Get Started in Minutes
+    </h2>
+    <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+      Install envcheck and validate your development environment with a simple YAML configuration.
+    </p>
+    
+    <Steps>
+      <Step title="Install envcheck">
+        Install envcheck using cargo or download from releases:
+        
+        ```bash
+        cargo install envcheck
+        ```
+      </Step>
+      
+      <Step title="Initialize configuration">
+        Generate a default `.envcheck.yaml` configuration file:
+        
+        ```bash
+        envcheck init
+        ```
+        
+        This creates a starter configuration you can customize for your project.
+      </Step>
+      
+      <Step title="Run validation">
+        Run envcheck to validate your environment:
+        
+        ```bash
+        envcheck
+        ```
+        
+        You'll see clear, colored output showing which checks passed and which need attention.
+      </Step>
+    </Steps>
+  </div>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+  {/* Key Features Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">
+      Comprehensive Environment Validation
+    </h2>
+    <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+      Everything you need to ensure development environments are consistent across your team.
+    </p>
+    
+    <CardGroup cols={2}>
+      <Card title="Tool Validation" icon="wrench" href="/configuration/tools">
+        Check if required tools are installed and verify versions using semver comparison.
+      </Card>
+      <Card title="Environment Variables" icon="key" href="/configuration/environment-variables">
+        Validate that required environment variables are set and optionally match regex patterns.
+      </Card>
+      <Card title="Port Availability" icon="network-wired" href="/configuration/ports">
+        Ensure critical ports are available before starting your application.
+      </Card>
+      <Card title="File & Directory Checks" icon="folder" href="/configuration/files">
+        Verify required files exist and have correct permissions.
+      </Card>
+      <Card title="Network Connectivity" icon="globe" href="/configuration/network">
+        Check connectivity to external services and APIs.
+      </Card>
+      <Card title="CI/CD Integration" icon="code-branch" href="/advanced/ci-cd">
+        JSON output format for seamless integration with CI/CD pipelines.
+      </Card>
+    </CardGroup>
+  </div>
 
-## Create beautiful pages
+  {/* Examples Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-white mb-4">
+      Ready-to-Use Examples
+    </h2>
+    <p className="text-base text-gray-600 dark:text-gray-400 mb-8">
+      Jump-start your configuration with examples for popular stacks.
+    </p>
+    
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <a href="/examples/nodejs" className="group block rounded-xl border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27] p-6 hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors no-underline">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Node.js</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Validate Node.js version, npm, and environment variables.</p>
+        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 group-hover:text-[#94cb04] dark:group-hover:text-[#94cb04]">
+          View example
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </a>
+      
+      <a href="/examples/python" className="group block rounded-xl border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27] p-6 hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors no-underline">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Python</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Check Python version, virtual environment, and dependencies.</p>
+        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 group-hover:text-[#94cb04] dark:group-hover:text-[#94cb04]">
+          View example
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </a>
+      
+      <a href="/examples/rust" className="group block rounded-xl border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27] p-6 hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors no-underline">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Rust</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Validate Rust toolchain, cargo, and project configuration.</p>
+        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 group-hover:text-[#94cb04] dark:group-hover:text-[#94cb04]">
+          View example
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </a>
+      
+      <a href="/examples/go" className="group block rounded-xl border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27] p-6 hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors no-underline">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Go</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Ensure Go version and module configuration are correct.</p>
+        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 group-hover:text-[#94cb04] dark:group-hover:text-[#94cb04]">
+          View example
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </a>
+      
+      <a href="/examples/rails" className="group block rounded-xl border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27] p-6 hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors no-underline">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Rails</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Validate Ruby version, Rails, and database configuration.</p>
+        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 group-hover:text-[#94cb04] dark:group-hover:text-[#94cb04]">
+          View example
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </a>
+      
+      <a href="/cli/commands" className="group block rounded-xl border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27] p-6 hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors no-underline">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">All Commands</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Explore all CLI commands and options.</p>
+        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 group-hover:text-[#94cb04] dark:group-hover:text-[#94cb04]">
+          View reference
+          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </a>
+    </div>
+  </div>
 
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+  {/* Community Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <div className="bg-gradient-to-r from-[#1a1d27] to-[#242838] dark:from-[#1a1d27] dark:to-[#242838] rounded-2xl border border-[#27272a] dark:border-[#27272a] p-8 sm:p-12">
+      <h2 className="text-2xl sm:text-3xl font-semibold text-gray-100 dark:text-gray-100 mb-4">
+        Built by the Community, for the Community
+      </h2>
+      <p className="text-base text-gray-400 dark:text-gray-400 mb-8 max-w-2xl">
+        envcheck is an open-source project designed to be community-driven. We welcome contributions of all kinds — from bug reports to new validators.
+      </p>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <a 
+          href="/contributing/overview" 
+          className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold rounded-lg bg-[#94cb04] text-[#0f1117] hover:bg-[#a8df05] transition-colors no-underline"
+        >
+          Start Contributing
+        </a>
+        <a 
+          href="https://github.com/dotandev/envcheck" 
+          className="inline-flex items-center justify-center px-6 py-3 text-base font-semibold rounded-lg border-2 border-gray-600 dark:border-gray-600 bg-transparent text-gray-100 dark:text-gray-100 hover:border-[#94cb04] dark:hover:border-[#94cb04] transition-colors no-underline"
+        >
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

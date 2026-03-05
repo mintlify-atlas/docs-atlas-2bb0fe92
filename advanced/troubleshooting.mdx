@@ -1,0 +1,514 @@
+---
+title: "Troubleshooting"
+description: "Common issues and solutions when using envcheck"
+---
+
+## Common Issues
+
+### Config File Not Found
+
+**Error Message:**
+```
+Error: Config file not found
+```
+
+**Cause:**
+envcheck looks for `.envcheck.yaml` in the current directory by default.
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Create a config file">
+    Initialize a new config file in your project root:
+    
+    ```bash
+    envcheck init
+    ```
+    
+    This creates a `.envcheck.yaml` file with example configuration.
+  </Accordion>
+  
+  <Accordion title="Specify config path">
+    Use the `--config` flag to point to your config file:
+    
+    ```bash
+    envcheck --config /path/to/.envcheck.yaml
+    ```
+    
+    Or use a relative path:
+    
+    ```bash
+    envcheck --config ./config/.envcheck.yaml
+    ```
+  </Accordion>
+  
+  <Accordion title="Check current directory">
+    Make sure you're running envcheck from the correct directory:
+    
+    ```bash
+    ls -la .envcheck.yaml  # Verify file exists
+    pwd                     # Check current directory
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Invalid YAML Syntax
+
+**Error Message:**
+```
+Error: Failed to parse config: invalid yaml syntax
+```
+
+**Cause:**
+Your `.envcheck.yaml` file has syntax errors.
+
+**Solutions:**
+
+<Steps>
+  <Step title="Check indentation">
+    YAML is whitespace-sensitive. Use 2 spaces for indentation (not tabs):
+    
+    ```yaml
+    version: "1"
+    tools:  # Correct: 2 spaces
+      - name: node
+        version: ">=18.0.0"  # Correct: 4 spaces (2 levels)
+    ```
+  </Step>
+  
+  <Step title="Validate quotes">
+    Version strings must be quoted:
+    
+    ```yaml
+    # ❌ Incorrect
+    version: 1
+    
+    # ✅ Correct
+    version: "1"
+    ```
+  </Step>
+  
+  <Step title="Use a YAML validator">
+    Validate your YAML syntax online or with a tool:
+    
+    ```bash
+    # Using yamllint
+    yamllint .envcheck.yaml
+    
+    # Using Python
+    python -c "import yaml; yaml.safe_load(open('.envcheck.yaml'))"
+    ```
+  </Step>
+</Steps>
+
+### Tool Not Found
+
+**Error Message:**
+```
+✗ node not found
+```
+
+**Cause:**
+The required tool is not installed or not in your PATH.
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Install the tool">
+    Install the missing tool:
+    
+    ```bash
+    # Node.js
+    # Visit https://nodejs.org or use a version manager:
+    nvm install 18
+    
+    # Docker
+    # Visit https://docs.docker.com/get-docker/
+    
+    # Git
+    sudo apt-get install git  # Ubuntu/Debian
+    brew install git          # macOS
+    ```
+  </Accordion>
+  
+  <Accordion title="Check PATH">
+    Verify the tool is in your PATH:
+    
+    ```bash
+    which node    # Should show path to node binary
+    echo $PATH    # View all directories in PATH
+    ```
+    
+    If not in PATH, add it to your shell profile:
+    
+    ```bash
+    # Add to ~/.bashrc or ~/.zshrc
+    export PATH="$HOME/.local/bin:$PATH"
+    ```
+  </Accordion>
+  
+  <Accordion title="Use verbose mode">
+    Run with `--verbose` to see more details:
+    
+    ```bash
+    envcheck --verbose
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Version Mismatch
+
+**Error Message:**
+```
+✗ node version 16.20.0 does not satisfy requirement >=18.0.0
+```
+
+**Cause:**
+The installed version doesn't meet the requirements specified in your config.
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Upgrade the tool">
+    Upgrade to a compatible version:
+    
+    ```bash
+    # Using nvm for Node.js
+    nvm install 18
+    nvm use 18
+    
+    # Update default version
+    nvm alias default 18
+    ```
+  </Accordion>
+  
+  <Accordion title="Update config requirement">
+    If the installed version is acceptable, update `.envcheck.yaml`:
+    
+    ```yaml
+    tools:
+      # Change requirement to match installed version
+      - name: node
+        version: ">=16.0.0"  # Was ">=18.0.0"
+    ```
+  </Accordion>
+  
+  <Accordion title="Use version managers">
+    Use version managers to switch between versions:
+    
+    ```bash
+    # Node Version Manager (nvm)
+    nvm use 18
+    
+    # rbenv for Ruby
+    rbenv local 3.2.0
+    
+    # pyenv for Python
+    pyenv local 3.11.0
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Environment Variable Not Set
+
+**Error Message:**
+```
+✗ DATABASE_URL is not set
+```
+
+**Cause:**
+A required environment variable is missing.
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Set the environment variable">
+    Set the variable in your shell:
+    
+    ```bash
+    export DATABASE_URL="postgresql://localhost/mydb"
+    ```
+    
+    Or add to your shell profile for persistence:
+    
+    ```bash
+    # Add to ~/.bashrc or ~/.zshrc
+    echo 'export DATABASE_URL="postgresql://localhost/mydb"' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+  </Accordion>
+  
+  <Accordion title="Use a .env file">
+    Create a `.env` file and load it before running envcheck:
+    
+    ```bash .env
+    DATABASE_URL=postgresql://localhost/mydb
+    API_KEY=your-api-key
+    ```
+    
+    Load it using `source` or `export`:
+    
+    ```bash
+    # Using export
+    export $(cat .env | xargs)
+    envcheck
+    
+    # Or run in same command
+    export $(cat .env | xargs) && envcheck
+    ```
+  </Accordion>
+  
+  <Accordion title="Mark as optional">
+    If the variable is not critical, mark it as optional:
+    
+    ```yaml
+    env_vars:
+      - name: DATABASE_URL
+        required: false  # Won't fail if missing
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Port Already in Use
+
+**Error Message:**
+```
+⚠ Port 3000 is in use
+```
+
+**Cause:**
+Another process is already using the required port.
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Find the process using the port">
+    Identify what's using the port:
+    
+    ```bash
+    # Linux/macOS
+    lsof -i :3000
+    
+    # Alternative using netstat
+    netstat -tuln | grep 3000
+    
+    # Windows
+    netstat -ano | findstr :3000
+    ```
+  </Accordion>
+  
+  <Accordion title="Stop the conflicting process">
+    Kill the process using the port:
+    
+    ```bash
+    # Find PID from lsof output, then:
+    kill -9 <PID>
+    
+    # Or if it's a known service:
+    sudo systemctl stop myservice
+    ```
+  </Accordion>
+  
+  <Accordion title="Use a different port">
+    Configure your application to use a different port:
+    
+    ```yaml .envcheck.yaml
+    ports:
+      - 3001  # Changed from 3000
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### File Not Found
+
+**Error Message:**
+```
+✗ .env does not exist
+```
+
+**Cause:**
+A required file is missing.
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Create the file">
+    Create the missing file:
+    
+    ```bash
+    touch .env
+    
+    # Or copy from example:
+    cp .env.example .env
+    ```
+  </Accordion>
+  
+  <Accordion title="Check file path">
+    Verify the path in your config is correct:
+    
+    ```yaml
+    files:
+      - path: .env          # Correct: relative to project root
+      - path: config/.env   # Check subdirectory
+    ```
+  </Accordion>
+  
+  <Accordion title="Mark as optional">
+    If the file is not critical:
+    
+    ```yaml
+    files:
+      - path: .env
+        required: false  # Won't fail if missing
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Network Check Failing
+
+**Error Message:**
+```
+✗ Failed to connect to https://api.example.com
+```
+
+**Cause:**
+Network connectivity issues or the service is down.
+
+**Solutions:**
+
+<AccordionGroup>
+  <Accordion title="Check internet connection">
+    Verify you have internet access:
+    
+    ```bash
+    ping google.com
+    curl -I https://api.example.com
+    ```
+  </Accordion>
+  
+  <Accordion title="Check firewall/proxy">
+    Corporate firewalls may block requests. Try:
+    
+    ```bash
+    # Set proxy if needed
+    export HTTP_PROXY=http://proxy.example.com:8080
+    export HTTPS_PROXY=http://proxy.example.com:8080
+    
+    envcheck
+    ```
+  </Accordion>
+  
+  <Accordion title="Verify the URL">
+    Make sure the URL is correct and accessible:
+    
+    ```yaml
+    network:
+      - url: https://api.example.com  # Check this is correct
+        status_code: 200
+    ```
+  </Accordion>
+  
+  <Accordion title="Remove network check for offline development">
+    If working offline, comment out network checks:
+    
+    ```yaml
+    # network:
+    #   - url: https://api.example.com
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Debugging Tips
+
+### Use Verbose Mode
+
+Enable verbose output to see detailed information:
+
+```bash
+envcheck --verbose
+```
+
+This shows:
+- Config file loading details
+- Exact version numbers detected
+- Full error messages
+- Debug information
+
+### Use JSON Output
+
+Get structured output for easier debugging:
+
+```bash
+envcheck --json | jq .
+```
+
+Filter for specific issues:
+
+```bash
+# Show only errors
+envcheck --json | jq -r '.results[] | select(.status == "error")'
+
+# Show errors with suggestions
+envcheck --json | jq -r '.results[] | select(.status == "error") | "\(.message)\n  → \(.suggestion)"'
+```
+
+### Check Config Location
+
+envcheck searches for config in this order:
+
+1. Path specified with `--config` flag
+2. `.envcheck.yaml` in current directory
+3. `.envcheck.yaml` in parent directories (up to git root)
+
+Verify which config is being used:
+
+```bash
+envcheck --verbose 2>&1 | grep "Loaded config"
+```
+
+### Validate Semver Requirements
+
+Test your version requirements:
+
+```bash
+# Check what version is detected
+node --version
+
+# Verify it matches your requirement
+# Requirement: ">=18.0.0"
+# Installed: "v18.17.0" → ✅ Valid
+# Installed: "v16.20.0" → ❌ Invalid
+```
+
+Common semver patterns:
+- `">=18.0.0"` - At least 18.0.0
+- `"^18.0.0"` - Compatible with 18.x.x (18.0.0 to 18.99.99)
+- `"~18.0.0"` - Approximately 18.0.x (18.0.0 to 18.0.99)
+- `"*"` - Any version
+
+## Getting Help
+
+<CardGroup cols={2}>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/dotandev/envcheck/issues">
+    Report bugs or request features
+  </Card>
+  
+  <Card title="Configuration Reference" icon="book" href="/configuration/overview">
+    Review all configuration options
+  </Card>
+  
+  <Card title="CLI Commands" icon="terminal" href="/cli/commands">
+    See all available commands and flags
+  </Card>
+  
+  <Card title="Examples" icon="code" href="/examples/nodejs">
+    Check out working examples
+  </Card>
+</CardGroup>
+
+<Note>
+  If you encounter an issue not listed here, please open an issue on [GitHub](https://github.com/dotandev/envcheck/issues) with:
+  - Output from `envcheck --verbose`
+  - Your `.envcheck.yaml` config (remove any secrets)
+  - Your environment (OS, shell, tool versions)
+</Note>

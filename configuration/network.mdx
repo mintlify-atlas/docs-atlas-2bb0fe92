@@ -1,0 +1,312 @@
+---
+title: Network Checks
+description: Validate network connectivity and API availability
+---
+
+## Overview
+
+The `network` section validates connectivity to external services and APIs. This ensures that required network endpoints are accessible before running your application.
+
+## Configuration
+
+Each network check is defined by a `NetworkCheck` struct (src/config.rs:51) with the following fields:
+
+<ParamField path="url" type="string" required>
+  The URL to check. Must be a valid HTTP or HTTPS URL.
+</ParamField>
+
+<ParamField path="status_code" type="number" optional>
+  Expected HTTP status code. If specified, the check fails if the response status doesn't match. If omitted, any successful response (2xx or 3xx) is accepted.
+</ParamField>
+
+## Examples
+
+### Basic Connectivity Check
+
+Check that a URL is accessible:
+
+```yaml
+network:
+  - url: https://api.example.com/health
+```
+
+### Status Code Validation
+
+Verify specific HTTP status codes:
+
+```yaml
+network:
+  - url: https://api.example.com/health
+    status_code: 200
+  
+  - url: https://api.stripe.com/v1/charges
+    status_code: 401  # Expect unauthorized without API key
+```
+
+### Multiple Endpoints
+
+Check connectivity to multiple services:
+
+```yaml
+network:
+  - url: https://api.github.com
+    status_code: 200
+  
+  - url: https://registry.npmjs.org
+    status_code: 200
+  
+  - url: https://api.stripe.com/v1
+  
+  - url: http://localhost:9200
+    status_code: 200
+```
+
+## Real-World Examples
+
+<CodeGroup>
+
+```yaml API Dependencies
+version: "1"
+
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+
+network:
+  # Verify external APIs are accessible
+  - url: https://api.stripe.com/v1
+  - url: https://api.sendgrid.com/v3
+  - url: https://api.github.com
+    status_code: 200
+```
+
+```yaml Health Endpoints
+version: "1"
+
+network:
+  # Check that backend services are running
+  - url: http://localhost:3000/health
+    status_code: 200
+  
+  - url: http://localhost:5432
+  
+  - url: http://localhost:6379
+```
+
+```yaml Microservices
+version: "1"
+
+network:
+  # Verify all microservices are up
+  - url: http://auth-service:8080/health
+    status_code: 200
+  
+  - url: http://api-gateway:8000/health
+    status_code: 200
+  
+  - url: http://payment-service:8081/health
+    status_code: 200
+```
+
+```yaml Development Environment
+version: "1"
+
+tools:
+  - name: docker
+    required: true
+
+network:
+  # Check Docker services are running
+  - url: http://localhost:5432
+    status_code: 200  # PostgreSQL
+  
+  - url: http://localhost:6379
+    # Redis
+  
+  - url: http://localhost:9200
+    status_code: 200  # Elasticsearch
+```
+
+</CodeGroup>
+
+## Use Cases
+
+### External API Availability
+
+Verify that third-party services are accessible:
+
+```yaml
+network:
+  # Payment providers
+  - url: https://api.stripe.com/v1
+  - url: https://api.paypal.com
+  
+  # Email services
+  - url: https://api.sendgrid.com/v3
+  
+  # Cloud providers
+  - url: https://s3.amazonaws.com
+  - url: https://storage.googleapis.com
+```
+
+### Local Services
+
+Check that required local services are running:
+
+```yaml
+network:
+  # Database
+  - url: http://localhost:5432
+  
+  # Cache
+  - url: http://localhost:6379
+  
+  # Message queue
+  - url: http://localhost:5672
+  
+  # Search engine
+  - url: http://localhost:9200
+    status_code: 200
+```
+
+### Health Checks
+
+Verify application health endpoints:
+
+```yaml
+network:
+  - url: http://localhost:3000/api/health
+    status_code: 200
+  
+  - url: http://localhost:3000/api/ready
+    status_code: 200
+  
+  - url: http://localhost:3000/api/live
+    status_code: 200
+```
+
+### Package Registries
+
+Ensure package registries are accessible:
+
+```yaml
+network:
+  - url: https://registry.npmjs.org
+    status_code: 200
+  
+  - url: https://pypi.org/simple
+  
+  - url: https://crates.io
+  
+  - url: https://rubygems.org
+```
+
+## Status Code Behavior
+
+### When `status_code` is Specified
+
+The check succeeds only if the response status matches exactly:
+
+```yaml
+network:
+  - url: https://api.example.com/health
+    status_code: 200  # Must be exactly 200
+```
+
+### When `status_code` is Omitted
+
+The check succeeds for any successful HTTP response (2xx or 3xx status codes):
+
+```yaml
+network:
+  - url: https://api.example.com
+  # Accepts 200, 201, 204, 301, 302, etc.
+```
+
+<Note>
+From src/config.rs:54, the `status_code` field defaults to `None`, meaning any successful response is accepted.
+</Note>
+
+## Common Status Codes
+
+| Code | Meaning | Use Case |
+|------|---------|----------|
+| 200 | OK | Standard successful response |
+| 201 | Created | POST endpoint that creates resources |
+| 204 | No Content | Successful request with no response body |
+| 301 | Moved Permanently | Permanent redirect |
+| 302 | Found | Temporary redirect |
+| 401 | Unauthorized | API endpoint requiring authentication |
+| 403 | Forbidden | Protected endpoint |
+| 404 | Not Found | Verify endpoint doesn't exist |
+
+## Protocol Support
+
+Network checks support:
+
+- **HTTP**: `http://example.com`
+- **HTTPS**: `https://example.com`
+- **Localhost**: `http://localhost:3000`
+- **IP addresses**: `http://192.168.1.100:8080`
+- **Custom ports**: `http://example.com:8080`
+
+```yaml
+network:
+  # All valid URL formats
+  - url: http://localhost:3000
+  - url: https://api.example.com
+  - url: http://192.168.1.100:8080
+  - url: https://example.com:8443/health
+```
+
+## Default Behavior
+
+From the struct definition in src/config.rs:51:
+
+- `url`: Required field, no default
+- `status_code`: Defaults to `None` (accepts any 2xx/3xx response)
+
+<Warning>
+Network checks will fail if:
+- The URL is unreachable (network error, DNS failure, timeout)
+- The response status code doesn't match `status_code` (when specified)
+- The URL is malformed or uses an unsupported protocol
+</Warning>
+
+<Tip>
+Use network checks sparingly in local development to avoid slow validation times. Consider using them primarily for critical external dependencies or in CI/CD environments where network reliability matters more.
+</Tip>
+
+## Combining with Other Checks
+
+Network checks work well with other validation types:
+
+```yaml
+version: "1"
+
+# Ensure tools are installed
+tools:
+  - name: docker
+    required: true
+  - name: docker-compose
+    required: true
+
+# Verify services are running
+network:
+  - url: http://localhost:5432
+    status_code: 200
+  - url: http://localhost:6379
+
+# Check configuration exists
+files:
+  - path: docker-compose.yml
+    required: true
+  - path: .env
+    required: true
+
+# Verify environment variables
+env_vars:
+  - name: DATABASE_URL
+    required: true
+```

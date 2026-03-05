@@ -1,0 +1,176 @@
+---
+title: Port Availability
+description: Check that required ports are available
+---
+
+## Overview
+
+The `ports` section validates that specific network ports are available for use. This prevents conflicts when your application tries to bind to ports already in use by other services.
+
+## Configuration
+
+The `ports` field is a simple array of port numbers (src/config.rs:14):
+
+<ParamField path="ports" type="array<number>" default="[]">
+  List of port numbers to check for availability. Each port should be a number between 1 and 65535.
+</ParamField>
+
+## Format
+
+Ports are specified as a simple YAML array:
+
+```yaml
+ports:
+  - 3000
+  - 5432
+  - 8080
+```
+
+## Examples
+
+### Single Port
+
+Check that a single port is available:
+
+```yaml
+version: "1"
+
+ports:
+  - 3000
+```
+
+### Multiple Ports
+
+Check multiple ports used by your application and services:
+
+```yaml
+version: "1"
+
+ports:
+  - 3000  # Application server
+  - 5432  # PostgreSQL
+  - 6379  # Redis
+  - 8080  # Development proxy
+```
+
+### With Comments
+
+YAML comments help document which service uses each port:
+
+```yaml
+ports:
+  - 3000  # Next.js dev server
+  - 5432  # PostgreSQL database
+  - 6379  # Redis cache
+  - 9200  # Elasticsearch
+  - 5672  # RabbitMQ
+```
+
+## Real-World Examples
+
+<CodeGroup>
+
+```yaml Node.js Project
+version: "1"
+
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+
+ports:
+  - 3000
+  - 5432
+
+files:
+  - path: package.json
+    required: true
+```
+
+```yaml Django Project
+version: "1"
+
+tools:
+  - name: python
+    version: ">=3.9.0"
+    required: true
+
+ports:
+  - 8000  # Default Django dev server port
+
+files:
+  - path: manage.py
+    required: true
+```
+
+```yaml Rails Project
+version: "1"
+
+tools:
+  - name: ruby
+    version: ">=3.0.0"
+    required: true
+
+ports:
+  - 3000
+
+files:
+  - path: Gemfile
+    required: true
+```
+
+</CodeGroup>
+
+## Common Port Numbers
+
+Here are commonly used port numbers for development:
+
+| Port | Service |
+|------|----------|
+| 3000 | Node.js/Next.js/Rails dev servers |
+| 3001 | Alternative Node.js port |
+| 4200 | Angular dev server |
+| 5000 | Flask default port |
+| 5173 | Vite dev server |
+| 5432 | PostgreSQL |
+| 6379 | Redis |
+| 8000 | Django dev server |
+| 8080 | Common HTTP alternative |
+| 8888 | Jupyter Notebook |
+| 9200 | Elasticsearch |
+| 27017 | MongoDB |
+
+## Validation Behavior
+
+Port checks verify that ports are **available** (not in use). Validation will fail if:
+
+- A port is already bound by another process
+- The port number is invalid (< 1 or > 65535)
+- Insufficient permissions to check the port (typically ports < 1024 require elevated privileges)
+
+<Warning>
+Port availability checks verify that ports are **not in use**. If a required service should already be running on a port, use [network checks](/configuration/network) instead to verify connectivity.
+</Warning>
+
+<Tip>
+Port checks are particularly useful in development environments where multiple projects or services might conflict. Run envcheck before starting your development server to catch port conflicts early.
+</Tip>
+
+## No Port Checks
+
+If your project doesn't need to validate port availability, simply omit the `ports` section entirely:
+
+```yaml
+version: "1"
+
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+
+files:
+  - path: go.mod
+    required: true
+```
+
+From src/config.rs:14, the `ports` field defaults to an empty array when not specified.

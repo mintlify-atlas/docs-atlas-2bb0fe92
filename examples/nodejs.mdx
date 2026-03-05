@@ -1,0 +1,190 @@
+---
+title: Node.js Project
+description: Environment validation for Node.js applications
+---
+
+## Overview
+
+This example demonstrates how to configure envcheck for a typical Node.js application. It validates Node.js and npm versions, required environment variables, port availability, and essential project files.
+
+## Configuration
+
+```yaml .envcheck.yaml
+version: "1"
+
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+  - name: npm
+    version: ">=9.0.0"
+    required: true
+  - name: git
+    required: true
+
+env_vars:
+  - name: NODE_ENV
+    required: false
+  - name: DATABASE_URL
+    required: true
+
+ports:
+  - 3000
+  - 5432
+
+files:
+  - path: .env
+    required: true
+  - path: package.json
+    required: true
+```
+
+## What This Checks
+
+### Tools
+
+- **node >=18.0.0**: Ensures you're running a modern LTS version of Node.js with the latest features and security patches
+- **npm >=9.0.0**: Validates you have a compatible npm version with improved workspace support
+- **git**: Confirms git is installed for version control operations
+
+### Environment Variables
+
+- **NODE_ENV** (optional): Standard Node.js environment variable for development/production modes
+- **DATABASE_URL** (required): Connection string for database access - critical for application functionality
+
+### Ports
+
+- **3000**: Default development server port for most Node.js frameworks (Express, Next.js, etc.)
+- **5432**: PostgreSQL database port - ensures no conflicts with local database
+
+### Files
+
+- **.env**: Local environment configuration file must exist
+- **package.json**: Project manifest is required for dependency management
+
+## Expected Output
+
+<CodeGroup>
+
+```bash Success
+$ envcheck
+
+✓ Tools
+  ✓ node: 18.17.0 (>= 18.0.0)
+  ✓ npm: 9.6.7 (>= 9.0.0)
+  ✓ git: installed
+
+✓ Environment Variables
+  ✓ NODE_ENV: development
+  ✓ DATABASE_URL: ***
+
+✓ Ports
+  ✓ 3000: available
+  ✓ 5432: available
+
+✓ Files
+  ✓ .env: exists
+  ✓ package.json: exists
+
+All checks passed!
+```
+
+```bash Failure
+$ envcheck
+
+✗ Tools
+  ✗ node: 16.14.0 (expected >= 18.0.0)
+  ✓ npm: 9.6.7 (>= 9.0.0)
+  ✓ git: installed
+
+✗ Environment Variables
+  ✓ NODE_ENV: development
+  ✗ DATABASE_URL: not set
+
+✗ Ports
+  ✗ 3000: in use
+  ✓ 5432: available
+
+✓ Files
+  ✓ .env: exists
+  ✓ package.json: exists
+
+Checks failed!
+```
+
+</CodeGroup>
+
+## Tips for Node.js Projects
+
+<Tip>
+Use `.env.example` as a template file committed to git, and create your local `.env` from it. Add `.env` to your `.gitignore` to prevent committing secrets.
+</Tip>
+
+<Warning>
+If port 3000 is in use, you may have another dev server running. Use `lsof -i :3000` on macOS/Linux or `netstat -ano | findstr :3000` on Windows to find the process.
+</Warning>
+
+<Info>
+For monorepo setups with multiple Node.js services, create separate `.envcheck.yaml` files in each package directory with service-specific configurations.
+</Info>
+
+## Common Variations
+
+### TypeScript Projects
+
+Add TypeScript compiler checks:
+
+```yaml
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+  - name: npm
+    version: ">=9.0.0"
+    required: true
+  - name: tsc
+    required: true
+
+files:
+  - path: tsconfig.json
+    required: true
+```
+
+### Next.js Applications
+
+Check for Next.js-specific requirements:
+
+```yaml
+env_vars:
+  - name: NEXT_PUBLIC_API_URL
+    required: true
+  - name: NEXTAUTH_SECRET
+    required: true
+
+ports:
+  - 3000
+```
+
+### Microservices
+
+Validate additional service dependencies:
+
+```yaml
+tools:
+  - name: docker
+    required: true
+  - name: docker-compose
+    required: true
+
+ports:
+  - 3000  # API service
+  - 3001  # Auth service
+  - 6379  # Redis
+```
+
+## Learn More
+
+- [Tools Validator](/configuration/tools) - Version constraints and tool detection
+- [Environment Variables](/configuration/environment-variables) - Pattern matching and validation
+- [Port Checker](/configuration/ports) - Port availability testing
+- [File Validator](/configuration/files) - Path and permission checks

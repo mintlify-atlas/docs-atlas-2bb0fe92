@@ -1,0 +1,224 @@
+---
+title: Python/Django Project
+description: Environment validation for Python and Django applications
+---
+
+## Overview
+
+This example shows how to configure envcheck for a Django project. It validates Python version, package management tools, required environment variables with pattern validation, and Django-specific files.
+
+## Configuration
+
+```yaml .envcheck.yaml
+version: "1"
+
+tools:
+  - name: python
+    version: ">=3.9.0"
+    required: true
+  - name: pip
+    required: true
+  - name: docker
+    required: false
+
+env_vars:
+  - name: SECRET_KEY
+    required: true
+  - name: DATABASE_URL
+    required: true
+  - name: DEBUG
+    required: false
+    pattern: "^(True|False|1|0)$"
+
+ports:
+  - 8000 # Default Django dev server port
+
+files:
+  - path: manage.py
+    required: true
+  - path: requirements.txt
+    required: true
+  - path: .env
+    required: false
+```
+
+## What This Checks
+
+### Tools
+
+- **python >=3.9.0**: Ensures compatibility with modern Python features and Django 4.x requirements
+- **pip**: Validates Python package manager is available for dependency installation
+- **docker** (optional): Checks for Docker if you're using containerized databases or services
+
+### Environment Variables
+
+- **SECRET_KEY** (required): Django's cryptographic signing key - must be set for security
+- **DATABASE_URL** (required): Database connection string (e.g., `postgres://user:pass@localhost/db`)
+- **DEBUG** (optional): When set, validates it matches boolean patterns (True/False/1/0)
+
+### Ports
+
+- **8000**: Django's default development server port - ensures it's available for `python manage.py runserver`
+
+### Files
+
+- **manage.py**: Django's management script - confirms you're in a Django project root
+- **requirements.txt**: Python dependencies file for reproducible environments
+- **.env** (optional): Environment file - recommended but not required
+
+## Expected Output
+
+<CodeGroup>
+
+```bash Success
+$ envcheck
+
+✓ Tools
+  ✓ python: 3.11.4 (>= 3.9.0)
+  ✓ pip: installed
+  ✓ docker: installed
+
+✓ Environment Variables
+  ✓ SECRET_KEY: ***
+  ✓ DATABASE_URL: ***
+  ✓ DEBUG: True
+
+✓ Ports
+  ✓ 8000: available
+
+✓ Files
+  ✓ manage.py: exists
+  ✓ requirements.txt: exists
+  ✓ .env: exists
+
+All checks passed!
+```
+
+```bash Validation Error
+$ envcheck
+
+✓ Tools
+  ✓ python: 3.11.4 (>= 3.9.0)
+  ✓ pip: installed
+  ✗ docker: not found
+
+✗ Environment Variables
+  ✗ SECRET_KEY: not set
+  ✓ DATABASE_URL: ***
+  ✗ DEBUG: "yes" (does not match pattern)
+
+✓ Ports
+  ✓ 8000: available
+
+✓ Files
+  ✓ manage.py: exists
+  ✓ requirements.txt: exists
+
+Checks failed!
+```
+
+</CodeGroup>
+
+## Tips for Django Projects
+
+<Tip>
+Generate a strong SECRET_KEY using Django's utility:
+```bash
+python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+```
+</Tip>
+
+<Warning>
+Never commit your SECRET_KEY to version control. Use environment variables or `.env` files (added to `.gitignore`).
+</Warning>
+
+<Info>
+The pattern validation for DEBUG ensures only valid boolean values are used, preventing common mistakes like setting `DEBUG=yes`.
+</Info>
+
+## Common Variations
+
+### Django REST Framework API
+
+Add API-specific environment checks:
+
+```yaml
+env_vars:
+  - name: SECRET_KEY
+    required: true
+  - name: DATABASE_URL
+    required: true
+  - name: CORS_ALLOWED_ORIGINS
+    required: true
+  - name: JWT_SECRET_KEY
+    required: true
+```
+
+### Celery Task Queue
+
+Validate async task infrastructure:
+
+```yaml
+tools:
+  - name: python
+    version: ">=3.9.0"
+    required: true
+  - name: redis-cli
+    required: true
+
+env_vars:
+  - name: CELERY_BROKER_URL
+    required: true
+  - name: CELERY_RESULT_BACKEND
+    required: true
+
+ports:
+  - 8000  # Django
+  - 6379  # Redis
+```
+
+### Production Deployment
+
+Add production-specific requirements:
+
+```yaml
+tools:
+  - name: gunicorn
+    required: true
+  - name: psycopg2
+    required: true
+
+env_vars:
+  - name: DEBUG
+    required: true
+    pattern: "^(False|0)$"  # Ensure DEBUG is off
+  - name: ALLOWED_HOSTS
+    required: true
+```
+
+### Poetry Projects
+
+For projects using Poetry instead of pip:
+
+```yaml
+tools:
+  - name: python
+    version: ">=3.9.0"
+    required: true
+  - name: poetry
+    version: ">=1.2.0"
+    required: true
+
+files:
+  - path: pyproject.toml
+    required: true
+  - path: poetry.lock
+    required: true
+```
+
+## Learn More
+
+- [Tools Validator](/configuration/tools) - Python version management and virtual environments
+- [Environment Variables](/configuration/environment-variables) - Pattern validation and security
+- [Port Checker](/configuration/ports) - Multi-service port management
+- [File Validator](/configuration/files) - Django project structure validation

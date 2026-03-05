@@ -1,0 +1,159 @@
+---
+title: Tool Validation
+description: Configure tool and CLI validation checks
+---
+
+## Overview
+
+The `tools` section validates that required command-line tools are installed and meet version requirements. This is useful for ensuring developers have the correct versions of languages, package managers, and build tools.
+
+## Configuration
+
+Each tool check is defined by a `ToolCheck` struct (src/config.rs:22) with the following fields:
+
+<ParamField path="name" type="string" required>
+  The name of the tool/command to check. This should be the executable name as it appears in PATH.
+</ParamField>
+
+<ParamField path="version" type="string" optional>
+  Semver version requirement (e.g., `">=18.0.0"`, `"^3.9.0"`). If omitted, only checks that the tool is installed.
+</ParamField>
+
+<ParamField path="required" type="boolean" default="true">
+  Whether the tool is required. If `true`, missing or incompatible tools will cause validation to fail.
+</ParamField>
+
+## Examples
+
+### Basic Tool Check
+
+Check that a tool is installed without version requirements:
+
+```yaml
+tools:
+  - name: git
+    required: true
+```
+
+### Version Requirements
+
+Specify minimum versions using semver syntax:
+
+```yaml
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+  - name: npm
+    version: ">=9.0.0"
+    required: true
+```
+
+### Optional Tools
+
+Mark tools as optional when they're nice-to-have but not essential:
+
+```yaml
+tools:
+  - name: docker
+    required: false
+  - name: kubectl
+    required: false
+```
+
+## Real-World Examples
+
+<CodeGroup>
+
+```yaml Node.js Project
+version: "1"
+
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+  - name: npm
+    version: ">=9.0.0"
+    required: true
+  - name: git
+    required: true
+```
+
+```yaml Rust Project
+version: "1"
+
+tools:
+  - name: rustc
+    version: ">=1.65.0"
+    required: true
+  - name: cargo
+    required: true
+```
+
+```yaml Python/Django Project
+version: "1"
+
+tools:
+  - name: python
+    version: ">=3.9.0"
+    required: true
+  - name: pip
+    required: true
+  - name: docker
+    required: false
+```
+
+```yaml Ruby on Rails Project
+version: "1"
+
+tools:
+  - name: ruby
+    version: ">=3.0.0"
+    required: true
+  - name: bundle
+    required: true
+  - name: node
+    required: false
+  - name: yarn
+    required: false
+```
+
+```yaml Go Project
+version: "1"
+
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+```
+
+</CodeGroup>
+
+## Semver Version Syntax
+
+The `version` field supports standard semver syntax:
+
+| Syntax | Meaning | Example |
+|--------|---------|----------|
+| `>=X.Y.Z` | Greater than or equal to | `>=18.0.0` |
+| `^X.Y.Z` | Compatible with (minor versions) | `^3.9.0` allows 3.9.x, 3.10.x but not 4.0.0 |
+| `~X.Y.Z` | Approximately equivalent to (patch versions) | `~1.2.3` allows 1.2.x but not 1.3.0 |
+| `X.Y.Z` | Exact version | `1.65.0` |
+
+<Note>
+If the `version` field is omitted or set to `null`, envcheck will only verify that the tool is installed without checking its version.
+</Note>
+
+## Default Behavior
+
+From the struct definition in src/config.rs:22:
+
+- `name`: Required field, no default
+- `version`: Defaults to `None` (no version check)
+- `required`: Defaults to `true`
+
+<Warning>
+When `required: true`, the validation will fail if:
+- The tool is not found in PATH
+- The tool version doesn't match the specified requirement
+</Warning>

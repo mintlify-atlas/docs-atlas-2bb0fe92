@@ -1,0 +1,275 @@
+---
+title: Installation
+description: Install envcheck using cargo, pre-built binaries, or build from source
+---
+
+## System Requirements
+
+envcheck is a cross-platform tool that works on:
+
+- **macOS** (x86_64, ARM64/Apple Silicon)
+- **Linux** (x86_64, ARM64)
+- **Windows** (x86_64)
+
+No runtime dependencies are required - envcheck is a single, statically-linked binary.
+
+## Installation Methods
+
+<Tabs>
+  <Tab title="Cargo (Recommended)">
+    If you have Rust installed, the easiest way to install envcheck is via cargo:
+
+    ```bash
+    cargo install envcheck
+    ```
+
+    This will download, compile, and install the latest version of envcheck from [crates.io](https://crates.io/crates/envcheck).
+
+    <Note>
+      Don't have Rust installed? Get it from [rustup.rs](https://rustup.rs)
+    </Note>
+
+    ### Verify Installation
+
+    ```bash
+    envcheck --version
+    ```
+
+    You should see output like:
+
+    ```
+    envcheck 0.1.0
+    ```
+  </Tab>
+
+  <Tab title="Pre-built Binaries">
+    Download pre-built binaries from the [GitHub releases page](https://github.com/dotandev/envcheck/releases).
+
+    <Steps>
+      <Step title="Download the Binary">
+        Choose the appropriate binary for your platform:
+
+        - **macOS (Apple Silicon)**: `envcheck-macos-arm64`
+        - **macOS (Intel)**: `envcheck-macos-x86_64`
+        - **Linux (x86_64)**: `envcheck-linux-x86_64`
+        - **Windows**: `envcheck-windows-x86_64.exe`
+
+        ```bash
+        # Example for macOS Apple Silicon
+        curl -LO https://github.com/dotandev/envcheck/releases/latest/download/envcheck-macos-arm64
+        ```
+      </Step>
+
+      <Step title="Make it Executable (Unix only)">
+        On macOS and Linux, make the binary executable:
+
+        ```bash
+        chmod +x envcheck-macos-arm64
+        ```
+      </Step>
+
+      <Step title="Move to PATH">
+        Move the binary to a directory in your PATH:
+
+        ```bash
+        # macOS/Linux
+        sudo mv envcheck-macos-arm64 /usr/local/bin/envcheck
+        ```
+
+        On Windows, move `envcheck-windows-x86_64.exe` to a directory in your PATH, such as `C:\Windows\System32\` or add a custom directory to your PATH.
+      </Step>
+
+      <Step title="Verify Installation">
+        ```bash
+        envcheck --version
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Build from Source">
+    Building from source gives you the latest development version and allows you to customize the build.
+
+    <Steps>
+      <Step title="Install Rust">
+        If you haven't already, install Rust from [rustup.rs](https://rustup.rs):
+
+        ```bash
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+        ```
+      </Step>
+
+      <Step title="Clone the Repository">
+        ```bash
+        git clone https://github.com/dotandev/envcheck.git
+        cd envcheck
+        ```
+      </Step>
+
+      <Step title="Build the Project">
+        Build the release binary:
+
+        ```bash
+        cargo build --release
+        ```
+
+        The compiled binary will be at `target/release/envcheck`.
+      </Step>
+
+      <Step title="Install the Binary">
+        Install to your system:
+
+        ```bash
+        cargo install --path .
+        ```
+
+        Or manually copy the binary:
+
+        ```bash
+        sudo cp target/release/envcheck /usr/local/bin/
+        ```
+      </Step>
+
+      <Step title="Verify Installation">
+        ```bash
+        envcheck --version
+        ```
+      </Step>
+    </Steps>
+
+    <Note>
+      Building from source requires a working Rust toolchain (1.70.0 or later recommended).
+    </Note>
+  </Tab>
+</Tabs>
+
+## Platform-Specific Notes
+
+### macOS
+
+On macOS, you may see a security warning when first running envcheck if you downloaded a pre-built binary. To allow it:
+
+```bash
+xattr -d com.apple.quarantine /usr/local/bin/envcheck
+```
+
+Alternatively, go to **System Preferences → Security & Privacy** and click **Allow Anyway** when prompted.
+
+### Linux
+
+On most Linux distributions, envcheck works out of the box. Ensure `/usr/local/bin` is in your PATH:
+
+```bash
+echo $PATH | grep -q "/usr/local/bin" || export PATH="/usr/local/bin:$PATH"
+```
+
+Add the export command to your `.bashrc` or `.zshrc` to make it permanent.
+
+### Windows
+
+On Windows, if you're using PowerShell, you may need to update your execution policy:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+## Updating envcheck
+
+<Tabs>
+  <Tab title="Cargo">
+    Update to the latest version:
+
+    ```bash
+    cargo install envcheck --force
+    ```
+  </Tab>
+
+  <Tab title="Pre-built Binaries">
+    Download the latest release and replace your existing binary following the installation steps above.
+  </Tab>
+
+  <Tab title="From Source">
+    Pull the latest changes and rebuild:
+
+    ```bash
+    cd envcheck
+    git pull
+    cargo install --path . --force
+    ```
+  </Tab>
+</Tabs>
+
+## Uninstalling
+
+<Tabs>
+  <Tab title="Cargo">
+    ```bash
+    cargo uninstall envcheck
+    ```
+  </Tab>
+
+  <Tab title="Manual Installation">
+    Remove the binary from your PATH:
+
+    ```bash
+    # macOS/Linux
+    sudo rm /usr/local/bin/envcheck
+    ```
+
+    On Windows, delete the executable from wherever you placed it.
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Command not found after installation">
+    Ensure the installation directory is in your PATH:
+
+    ```bash
+    # Check your PATH
+    echo $PATH
+
+    # If cargo's bin directory is missing, add it:
+    export PATH="$HOME/.cargo/bin:$PATH"
+    ```
+
+    Add the export to your shell profile (`.bashrc`, `.zshrc`, etc.) to make it permanent.
+  </Accordion>
+
+  <Accordion title="Permission denied when running envcheck">
+    Make sure the binary is executable:
+
+    ```bash
+    chmod +x $(which envcheck)
+    ```
+  </Accordion>
+
+  <Accordion title="Cargo build fails">
+    Ensure you have the latest Rust version:
+
+    ```bash
+    rustup update
+    ```
+
+    envcheck requires Rust 1.70.0 or later.
+  </Accordion>
+
+  <Accordion title="SSL/TLS errors on Linux">
+    Some validators check network connectivity. Ensure you have OpenSSL installed:
+
+    ```bash
+    # Debian/Ubuntu
+    sudo apt-get install libssl-dev
+
+    # Fedora/RHEL
+    sudo dnf install openssl-devel
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+  Now that envcheck is installed, learn how to use it with our quick start guide
+</Card>

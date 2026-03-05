@@ -1,0 +1,350 @@
+---
+title: Rails Project
+description: Environment validation for Ruby on Rails applications
+---
+
+## Overview
+
+This example demonstrates envcheck configuration for a Ruby on Rails application. It validates Ruby and Bundler versions, optional Node.js and Yarn for asset compilation, environment variables with pattern matching, and Rails-specific files.
+
+## Configuration
+
+```yaml .envcheck.yaml
+version: "1"
+
+tools:
+  - name: ruby
+    version: ">=3.0.0"
+    required: true
+  - name: bundle
+    required: true
+  - name: node
+    required: false
+  - name: yarn
+    required: false
+
+env_vars:
+  - name: DATABASE_URL
+    required: true
+  - name: RAILS_ENV
+    required: false
+    pattern: "^(development|test|production)$"
+
+ports:
+  - 3000
+
+files:
+  - path: Gemfile
+    required: true
+  - path: config/database.yml
+    required: true
+  - path: .env
+    required: false
+```
+
+## What This Checks
+
+### Tools
+
+- **ruby >=3.0.0**: Ensures compatibility with Rails 7.x and modern Ruby features
+- **bundle**: Validates Bundler is available for gem dependency management
+- **node** (optional): Required for Rails asset pipeline and JavaScript compilation
+- **yarn** (optional): Modern JavaScript package manager for Rails with Webpacker/jsbundling
+
+### Environment Variables
+
+- **DATABASE_URL** (required): Database connection string - critical for Active Record
+- **RAILS_ENV** (optional): When set, validates it's a valid Rails environment (development/test/production)
+
+### Ports
+
+- **3000**: Rails default development server port for `rails server`
+
+### Files
+
+- **Gemfile**: Ruby dependencies manifest - required for all Rails projects
+- **config/database.yml**: Database configuration - Rails standard location
+- **.env** (optional): Environment variables file - recommended but not required
+
+## Expected Output
+
+<CodeGroup>
+
+```bash Success
+$ envcheck
+
+✓ Tools
+  ✓ ruby: 3.2.2 (>= 3.0.0)
+  ✓ bundle: installed
+  ✓ node: installed
+  ✓ yarn: installed
+
+✓ Environment Variables
+  ✓ DATABASE_URL: ***
+  ✓ RAILS_ENV: development
+
+✓ Ports
+  ✓ 3000: available
+
+✓ Files
+  ✓ Gemfile: exists
+  ✓ config/database.yml: exists
+  ✓ .env: exists
+
+All checks passed!
+```
+
+```bash Validation Error
+$ envcheck
+
+✗ Tools
+  ✗ ruby: 2.7.5 (expected >= 3.0.0)
+  ✓ bundle: installed
+  ✓ node: not found (optional)
+  ✓ yarn: not found (optional)
+
+✗ Environment Variables
+  ✗ DATABASE_URL: not set
+  ✗ RAILS_ENV: "staging" (does not match pattern)
+
+✗ Ports
+  ✗ 3000: in use
+
+✓ Files
+  ✓ Gemfile: exists
+  ✓ config/database.yml: exists
+
+Checks failed!
+```
+
+</CodeGroup>
+
+## Tips for Rails Projects
+
+<Tip>
+Use `dotenv-rails` gem to automatically load `.env` files in development and test environments. Add `.env` to `.gitignore` and commit `.env.example` as a template.
+</Tip>
+
+<Warning>
+The pattern validation ensures RAILS_ENV only accepts standard environments. If you use custom environments like "staging", update the pattern to include them.
+</Warning>
+
+<Info>
+Node.js and Yarn are marked optional because not all Rails apps need JavaScript bundling. Rails 7+ can work with import maps, eliminating the Node.js dependency.
+</Info>
+
+## Common Variations
+
+### Rails API-Only Mode
+
+Simplified checks for API applications:
+
+```yaml
+tools:
+  - name: ruby
+    version: ">=3.0.0"
+    required: true
+  - name: bundle
+    required: true
+
+env_vars:
+  - name: DATABASE_URL
+    required: true
+  - name: SECRET_KEY_BASE
+    required: true
+  - name: RAILS_ENV
+    required: false
+    pattern: "^(development|test|production)$"
+
+ports:
+  - 3000
+
+files:
+  - path: Gemfile
+    required: true
+  - path: config/database.yml
+    required: true
+```
+
+### Rails with Hotwire/Turbo
+
+Modern Rails with minimal JavaScript:
+
+```yaml
+tools:
+  - name: ruby
+    version: ">=3.0.0"
+    required: true
+  - name: bundle
+    required: true
+  - name: node
+    required: false  # Optional with import maps
+
+files:
+  - path: Gemfile
+    required: true
+  - path: config/importmap.rb
+    required: false
+  - path: app/views/layouts/application.html.erb
+    required: true
+```
+
+### Rails with Webpacker/esbuild
+
+Full JavaScript toolchain:
+
+```yaml
+tools:
+  - name: ruby
+    version: ">=3.0.0"
+    required: true
+  - name: bundle
+    required: true
+  - name: node
+    version: ">=16.0.0"
+    required: true
+  - name: yarn
+    required: true
+
+files:
+  - path: Gemfile
+    required: true
+  - path: package.json
+    required: true
+  - path: yarn.lock
+    required: true
+```
+
+### Rails with Sidekiq
+
+Background job processing:
+
+```yaml
+tools:
+  - name: ruby
+    version: ">=3.0.0"
+    required: true
+  - name: bundle
+    required: true
+  - name: redis-cli
+    required: true
+
+env_vars:
+  - name: DATABASE_URL
+    required: true
+  - name: REDIS_URL
+    required: true
+
+ports:
+  - 3000  # Rails
+  - 6379  # Redis
+```
+
+### Rails Production Deployment
+
+Production environment validation:
+
+```yaml
+tools:
+  - name: ruby
+    version: ">=3.0.0"
+    required: true
+  - name: bundle
+    required: true
+
+env_vars:
+  - name: DATABASE_URL
+    required: true
+  - name: SECRET_KEY_BASE
+    required: true
+  - name: RAILS_ENV
+    required: true
+    pattern: "^production$"
+  - name: RAILS_SERVE_STATIC_FILES
+    required: false
+  - name: RAILS_LOG_TO_STDOUT
+    required: false
+
+files:
+  - path: Gemfile.lock
+    required: true
+  - path: public/assets/.sprockets-manifest-*.json
+    required: false
+```
+
+### Multi-Database Rails App
+
+Rails 6+ with multiple databases:
+
+```yaml
+env_vars:
+  - name: DATABASE_URL
+    required: true
+  - name: ANALYTICS_DATABASE_URL
+    required: true
+  - name: CACHE_DATABASE_URL
+    required: false
+
+files:
+  - path: config/database.yml
+    required: true
+  - path: db/primary_schema.rb
+    required: false
+  - path: db/analytics_schema.rb
+    required: false
+```
+
+## Rails-Specific Considerations
+
+### Database URL Format
+
+Common DATABASE_URL patterns for Rails:
+- PostgreSQL: `postgresql://user:password@localhost/mydb`
+- MySQL: `mysql2://user:password@localhost/mydb`
+- SQLite: `sqlite3:db/development.sqlite3`
+
+### Ruby Version Managers
+
+Popular tools for managing Ruby versions:
+- **rbenv**: Lightweight Ruby version management
+- **rvm**: Ruby Version Manager with gemsets
+- **asdf**: Multi-runtime version manager
+
+Consider adding `.ruby-version` file:
+```yaml
+files:
+  - path: .ruby-version
+    required: true
+```
+
+### Credentials and Security
+
+Rails 5.2+ uses encrypted credentials:
+```yaml
+env_vars:
+  - name: RAILS_MASTER_KEY
+    required: true  # For production
+
+files:
+  - path: config/credentials.yml.enc
+    required: true
+  - path: config/master.key
+    required: false  # Should be in .gitignore
+```
+
+### Asset Compilation
+
+For apps with compiled assets, ensure NODE_ENV:
+```yaml
+env_vars:
+  - name: NODE_ENV
+    required: false
+    pattern: "^(development|production)$"
+```
+
+## Learn More
+
+- [Tools Validator](/configuration/tools) - Ruby version management and bundler
+- [Environment Variables](/configuration/environment-variables) - Pattern validation for Rails environments
+- [Port Checker](/configuration/ports) - Rails server and service ports
+- [File Validator](/configuration/files) - Rails directory structure validation

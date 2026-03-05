@@ -1,0 +1,342 @@
+---
+title: File Validation
+description: Validate files and directories in your project
+---
+
+## Overview
+
+The `files` section validates the existence of required files and directories, optionally checking file permissions. This ensures critical project files are present before running your application.
+
+## Configuration
+
+Each file check is defined by a `FileCheck` struct (src/config.rs:40) with the following fields:
+
+<ParamField path="path" type="string" required>
+  The file or directory path to check. Can be absolute or relative to the current directory.
+</ParamField>
+
+<ParamField path="required" type="boolean" default="true">
+  Whether the file or directory must exist. If `true`, validation fails when the path is not found.
+</ParamField>
+
+<ParamField path="is_directory" type="boolean" default="false">
+  Whether the path should be a directory. If `true`, validation fails if the path exists but is not a directory.
+</ParamField>
+
+<ParamField path="permissions" type="number" optional>
+  Unix file permissions in octal format (e.g., `0o755`, `0o644`). If specified, the file must have exactly these permissions.
+</ParamField>
+
+## Examples
+
+### Basic File Check
+
+Check that a file exists:
+
+```yaml
+files:
+  - path: .env
+    required: true
+  - path: package.json
+    required: true
+```
+
+### Optional Files
+
+Mark files as optional when they're not always needed:
+
+```yaml
+files:
+  - path: .env
+    required: false
+  - path: .env.local
+    required: false
+```
+
+### Directory Validation
+
+Check that directories exist:
+
+```yaml
+files:
+  - path: src
+    required: true
+    is_directory: true
+  
+  - path: node_modules
+    required: true
+    is_directory: true
+```
+
+### Permission Checks
+
+Validate file permissions (useful for scripts and executables):
+
+```yaml
+files:
+  - path: scripts/deploy.sh
+    required: true
+    permissions: 755  # Executable by owner, readable by all
+  
+  - path: .env
+    required: true
+    permissions: 600  # Readable/writable by owner only
+  
+  - path: config.yaml
+    required: true
+    permissions: 644  # Readable by all, writable by owner
+```
+
+<Note>
+Permissions are specified in octal format. Common values:
+- `755`: Executable files (rwxr-xr-x)
+- `644`: Regular files (rw-r--r--)
+- `600`: Private files (rw-------)
+- `700`: Private executables (rwx------)
+</Note>
+
+## Real-World Examples
+
+<CodeGroup>
+
+```yaml Node.js Project
+version: "1"
+
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+
+files:
+  - path: .env
+    required: true
+  - path: package.json
+    required: true
+```
+
+```yaml Rust Project
+version: "1"
+
+tools:
+  - name: rustc
+    version: ">=1.65.0"
+    required: true
+
+files:
+  - path: Cargo.toml
+    required: true
+  - path: src/main.rs
+    required: false
+  - path: src/lib.rs
+    required: false
+```
+
+```yaml Django Project
+version: "1"
+
+tools:
+  - name: python
+    version: ">=3.9.0"
+    required: true
+
+files:
+  - path: manage.py
+    required: true
+  - path: requirements.txt
+    required: true
+  - path: .env
+    required: false
+```
+
+```yaml Rails Project
+version: "1"
+
+tools:
+  - name: ruby
+    version: ">=3.0.0"
+    required: true
+
+files:
+  - path: Gemfile
+    required: true
+  - path: config/database.yml
+    required: true
+  - path: .env
+    required: false
+```
+
+```yaml Go Project
+version: "1"
+
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+
+files:
+  - path: go.mod
+    required: true
+  - path: main.go
+    required: false
+```
+
+</CodeGroup>
+
+## Common Use Cases
+
+### Configuration Files
+
+```yaml
+files:
+  - path: .env
+    required: true
+    permissions: 600  # Keep secrets private
+  
+  - path: config/app.yaml
+    required: true
+  
+  - path: docker-compose.yml
+    required: false
+```
+
+### Project Structure
+
+```yaml
+files:
+  # Source directories
+  - path: src
+    required: true
+    is_directory: true
+  
+  - path: tests
+    required: true
+    is_directory: true
+  
+  # Build artifacts
+  - path: dist
+    required: false
+    is_directory: true
+```
+
+### Executable Scripts
+
+```yaml
+files:
+  - path: scripts/setup.sh
+    required: true
+    permissions: 755
+  
+  - path: scripts/deploy.sh
+    required: true
+    permissions: 755
+  
+  - path: scripts/test.sh
+    required: false
+    permissions: 755
+```
+
+### Language-Specific Files
+
+<Tabs>
+  <Tab title="Node.js">
+    ```yaml
+    files:
+      - path: package.json
+        required: true
+      - path: package-lock.json
+        required: false
+      - path: tsconfig.json
+        required: false
+      - path: node_modules
+        required: false
+        is_directory: true
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```yaml
+    files:
+      - path: requirements.txt
+        required: true
+      - path: setup.py
+        required: false
+      - path: pyproject.toml
+        required: false
+      - path: venv
+        required: false
+        is_directory: true
+    ```
+  </Tab>
+  <Tab title="Rust">
+    ```yaml
+    files:
+      - path: Cargo.toml
+        required: true
+      - path: Cargo.lock
+        required: false
+      - path: src
+        required: true
+        is_directory: true
+      - path: target
+        required: false
+        is_directory: true
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```yaml
+    files:
+      - path: go.mod
+        required: true
+      - path: go.sum
+        required: false
+      - path: main.go
+        required: false
+      - path: vendor
+        required: false
+        is_directory: true
+    ```
+  </Tab>
+</Tabs>
+
+## Path Resolution
+
+Paths can be specified as:
+
+- **Relative paths**: Resolved from the current working directory
+  ```yaml
+  - path: .env
+  - path: src/main.rs
+  - path: config/database.yml
+  ```
+
+- **Absolute paths**: Used as-is
+  ```yaml
+  - path: /etc/myapp/config.yaml
+  - path: /var/log/myapp
+  ```
+
+- **Home directory**: Use `~` for home directory expansion
+  ```yaml
+  - path: ~/.myapp/credentials
+  - path: ~/projects/myapp/.env
+  ```
+
+## Default Behavior
+
+From the struct definition in src/config.rs:40:
+
+- `path`: Required field, no default
+- `required`: Defaults to `true`
+- `is_directory`: Defaults to `false`
+- `permissions`: Defaults to `None` (no permission check)
+
+<Warning>
+When `required: true`, validation fails if:
+- The file or directory does not exist
+- `is_directory: true` but the path is a file
+- `is_directory: false` (or omitted) but the path is a directory
+- `permissions` is set but the file has different permissions
+</Warning>
+
+<Tip>
+Combine `required: false` with permission checks to validate optional files only when they exist, ensuring correct permissions if present.
+</Tip>

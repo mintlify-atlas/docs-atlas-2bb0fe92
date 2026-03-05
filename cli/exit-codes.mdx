@@ -1,0 +1,264 @@
+---
+title: Exit Codes
+description: Understanding envcheck exit codes for CI/CD integration
+---
+
+## Overview
+
+envcheck uses standard Unix exit codes to indicate the validation results. These exit codes are essential for integrating envcheck into CI/CD pipelines, scripts, and automated workflows.
+
+---
+
+## Exit Code Reference
+
+### 0 - Success
+
+**Meaning:** All validations passed or only warnings were found.
+
+**When it occurs:**
+- All checks passed successfully
+- Some non-critical warnings were found, but no errors
+
+**Example scenarios:**
+```bash
+# All checks pass
+$ envcheck
+✓ All checks passed!
+$ echo $?
+0
+
+# Warnings present but no errors
+$ envcheck
+⚠ 2 warning(s) found, but you can proceed.
+$ echo $?
+0
+```
+
+**CI/CD behavior:**
+- Pipeline should continue
+- Deployment can proceed
+- No action required
+
+---
+
+### 1 - Validation Failure
+
+**Meaning:** One or more validation checks failed with errors.
+
+**When it occurs:**
+- Required tools are missing or have incorrect versions
+- Required environment variables are not set
+- Required ports are unavailable
+- Required files do not exist
+- Network endpoints are unreachable or return unexpected status codes
+
+**Example scenarios:**
+```bash
+# Required tool missing
+$ envcheck
+✗ node not found
+❌ 1 issue(s) found. Fix them to continue.
+$ echo $?
+1
+
+# Version mismatch
+$ envcheck
+✗ node version 16.14.0 does not satisfy >=18.0.0
+❌ 1 issue(s) found. Fix them to continue.
+$ echo $?
+1
+
+# Port in use
+$ envcheck
+✗ Port 3000 is already in use
+❌ 1 issue(s) found. Fix them to continue.
+$ echo $?
+1
+```
+
+**CI/CD behavior:**
+- Pipeline should fail
+- Deployment should be blocked
+- Errors must be fixed before proceeding
+
+---
+
+## Implementation Details
+
+The exit code logic is implemented in `src/reporter.rs:92-98`:
+
+```rust
+pub fn exit_code(&self) -> i32 {
+    if self.has_errors() {
+        1
+    } else {
+        0
+    }
+}
+```
+
+The `has_errors()` method checks if any validation result has an `Error` status:
+
+```rust
+pub fn has_errors(&self) -> bool {
+    self.results.iter().any(|r| matches!(r.status, ValidationStatus::Error))
+}
+```
+
+---
+
+## Validation Status Levels
+
+envcheck uses three validation status levels that affect the exit code:
+
+### Success
+- Validation check passed
+- Does not affect exit code
+- Displayed with ✓ symbol
+
+### Warning
+- Non-critical issue detected
+- Does **not** cause exit code 1
+- Displayed with ⚠ symbol
+- Includes optional suggestions for improvement
+
+### Error
+- Critical validation failure
+- **Causes exit code 1**
+- Displayed with ✗ symbol
+- Includes optional suggestions for remediation
+
+---
+
+## Using Exit Codes in Scripts
+
+### Bash Script
+
+```bash
+#!/bin/bash
+
+envcheck
+
+if [ $? -eq 0 ]; then
+  echo "Environment is ready"
+  npm start
+else
+  echo "Environment validation failed"
+  exit 1
+fi
+```
+
+### CI/CD Pipeline Examples
+
+#### GitHub Actions
+
+```yaml
+name: Validate Environment
+
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run envcheck
+        run: |
+          envcheck
+          # Exits with code 1 if validation fails
+      - name: Deploy
+        if: success()
+        run: ./deploy.sh
+```
+
+#### GitLab CI
+
+```yaml
+validate-environment:
+  stage: test
+  script:
+    - envcheck
+  # Job fails if exit code is non-zero
+
+deploy:
+  stage: deploy
+  script:
+    - ./deploy.sh
+  needs:
+    - validate-environment
+```
+
+#### CircleCI
+
+```yaml
+version: 2.1
+
+jobs:
+  validate:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: Validate environment
+          command: envcheck
+      # Step fails if exit code is 1
+
+workflows:
+  build-and-deploy:
+    jobs:
+      - validate
+      - deploy:
+          requires:
+            - validate
+```
+
+---
+
+## JSON Output and Exit Codes
+
+When using `--json` flag, the exit code behavior remains the same:
+
+```bash
+$ envcheck --json
+{
+  "results": [...],
+  "summary": {
+    "errors": 1,
+    "warnings": 0,
+    "successes": 2
+  },
+  "passed": false
+}
+$ echo $?
+1
+```
+
+The `passed` field in JSON output indicates whether the exit code will be 0 (true) or 1 (false).
+
+---
+
+## Best Practices
+
+<Tip>
+**Use exit codes in automation:**
+- Always check exit codes in scripts and pipelines
+- Fail fast when exit code is 1
+- Log results for debugging failed validations
+</Tip>
+
+<Warning>
+**Warning status does not fail:**
+Remember that warnings do **not** cause a non-zero exit code. If you need warnings to fail your pipeline, you'll need to parse the JSON output and check the warning count.
+</Warning>
+
+```bash
+# Fail on warnings
+RESULT=$(envcheck --json)
+WARNINGS=$(echo $RESULT | jq '.summary.warnings')
+
+if [ $WARNINGS -gt 0 ]; then
+  echo "Warnings are not allowed in production"
+  exit 1
+fi
+```

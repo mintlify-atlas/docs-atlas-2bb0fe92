@@ -1,80 +1,436 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get up and running with envcheck in minutes
 ---
 
-## Get started in three steps
+## Prerequisites
 
-Get your documentation site running locally and make your first customization.
+Before starting, make sure you have [installed envcheck](/installation).
 
-### Step 1: Set up your local environment
+## Your First Environment Check
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+Let's create your first environment validation in just a few steps.
 
-### Step 2: Deploy your changes
+<Steps>
+  <Step title="Navigate to Your Project">
+    Open a terminal and navigate to your project directory:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash
+    cd /path/to/your/project
+    ```
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Initialize Configuration">
+    Generate a default `.envcheck.yaml` configuration file:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash
+    envcheck init
+    ```
 
-### Step 3: Go live
+    You should see:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    ```
+    Successfully initialized .envcheck.yaml
+    ```
 
-## Next steps
+    This creates a `.envcheck.yaml` file with sensible defaults:
 
-Now that you have your docs running, explore these key features:
+    ```yaml
+    version: "1"
+    tools:
+      - name: node
+        version: ">=18.0.0"
+      - name: git
+    env_vars:
+      - name: NODE_ENV
+        required: false
+    ports:
+      - 3000
+    files:
+      - path: .env
+        required: false
+    network:
+      - url: https://github.com
+        status_code: 200
+    ```
+  </Step>
+
+  <Step title="Run Your First Check">
+    Execute envcheck to validate your environment:
+
+    ```bash
+    envcheck
+    ```
+
+    You'll see output showing which checks passed and which failed:
+
+    ```
+    Running environment checks...
+
+    ✓ node 18.17.0 found
+    ✓ git found
+    ✓ Port 3000 is available
+    ✗ .env does not exist
+      Create .env file
+    ✓ https://github.com connected (200)
+
+    --- 1 issue(s) found. Fix them to continue.
+    ```
+  </Step>
+
+  <Step title="Fix Any Issues">
+    Address any failing checks. For example, if `.env` is missing:
+
+    ```bash
+    touch .env
+    ```
+
+    Then run envcheck again:
+
+    ```bash
+    envcheck
+    ```
+
+    When all checks pass:
+
+    ```
+    Running environment checks...
+
+    ✓ node 18.17.0 found
+    ✓ git found
+    ✓ Port 3000 is available
+    ✓ .env exists
+    ✓ https://github.com connected (200)
+
+    --- All checks passed!
+    ```
+  </Step>
+</Steps>
+
+## Customize Your Configuration
+
+Now let's customize the configuration for your specific project needs.
+
+### Example: Node.js Project
+
+For a typical Node.js web application:
+
+```yaml
+version: "1"
+
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+  - name: npm
+    version: ">=9.0.0"
+    required: true
+  - name: git
+    required: true
+
+env_vars:
+  - name: NODE_ENV
+    required: false
+  - name: DATABASE_URL
+    required: true
+
+ports:
+  - 3000
+  - 5432
+
+files:
+  - path: .env
+    required: true
+  - path: package.json
+    required: true
+```
+
+### Example: Go Project
+
+For a Go application:
+
+```yaml
+version: "1"
+
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+
+env_vars:
+  - name: GOPATH
+    required: false
+  - name: GOBIN
+    required: false
+
+files:
+  - path: go.mod
+    required: true
+  - path: main.go
+    required: false
+```
+
+## Advanced Usage
+
+### Custom Configuration Path
+
+Use a configuration file from a different location:
+
+```bash
+envcheck --config /path/to/custom-config.yaml
+```
+
+### Verbose Output
+
+Get detailed information about what envcheck is doing:
+
+```bash
+envcheck --verbose
+```
+
+### JSON Output for CI/CD
+
+Export results in JSON format for integration with CI/CD pipelines:
+
+```bash
+envcheck --json
+```
+
+Example JSON output:
+
+```json
+{
+  "checks": [
+    {
+      "type": "tool",
+      "name": "node",
+      "status": "pass",
+      "version": "18.17.0"
+    },
+    {
+      "type": "env_var",
+      "name": "DATABASE_URL",
+      "status": "fail",
+      "message": "DATABASE_URL is not set"
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 4,
+    "failed": 1
+  }
+}
+```
+
+### Exit Codes
+
+envcheck returns appropriate exit codes for scripting:
+
+- `0` - All checks passed
+- Non-zero - One or more checks failed
+
+This makes it perfect for pre-commit hooks and CI/CD:
+
+```bash
+#!/bin/bash
+if envcheck; then
+  echo "Environment validated!"
+  npm start
+else
+  echo "Environment validation failed. Fix issues and try again."
+  exit 1
+fi
+```
+
+## Integration Examples
+
+### Git Pre-commit Hook
+
+Add envcheck to your pre-commit hook (`.git/hooks/pre-commit`):
+
+```bash
+#!/bin/sh
+envcheck || {
+  echo "Environment check failed. Commit aborted."
+  exit 1
+}
+```
+
+Make it executable:
+
+```bash
+chmod +x .git/hooks/pre-commit
+```
+
+### GitHub Actions
+
+Integrate envcheck into your CI pipeline:
+
+```yaml
+name: Environment Check
+
+on: [push, pull_request]
+
+jobs:
+  envcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install envcheck
+        run: cargo install envcheck
+      
+      - name: Run environment checks
+        run: envcheck --json
+```
+
+### Docker
+
+Validate the environment inside Docker containers:
+
+```dockerfile
+FROM node:18
+
+# Install envcheck
+RUN cargo install envcheck
+
+# Copy config
+COPY .envcheck.yaml .
+
+# Validate environment at build time
+RUN envcheck
+
+# Continue with your application setup
+COPY . .
+CMD ["npm", "start"]
+```
+
+## Configuration Reference
+
+### Tools Section
+
+Validate installed tools and their versions:
+
+```yaml
+tools:
+  - name: node              # Tool name (required)
+    version: ">=18.0.0"     # Semver range (optional)
+    required: true          # Fail if missing (default: true)
+```
+
+**Supported semver operators**: `>=`, `<=`, `>`, `<`, `=`, `^`, `~`
+
+### Environment Variables Section
+
+Check environment variables:
+
+```yaml
+env_vars:
+  - name: DATABASE_URL      # Variable name (required)
+    required: true          # Fail if not set (default: true)
+    pattern: "^postgres://" # Regex pattern (optional)
+```
+
+### Ports Section
+
+Verify port availability:
+
+```yaml
+ports:
+  - 3000   # Port number
+  - 5432
+  - 8080
+```
+
+### Files Section
+
+Validate file and directory existence:
+
+```yaml
+files:
+  - path: .env              # File path (required)
+    required: true          # Fail if missing (default: true)
+    is_directory: false     # Expect directory (default: false)
+    permissions: 0o600      # Unix permissions in octal (optional)
+```
+
+### Network Section
+
+Check network connectivity:
+
+```yaml
+network:
+  - url: https://api.github.com  # URL to check (required)
+    status_code: 200              # Expected status code (optional)
+```
+
+## Tips and Best Practices
+
+<Card title="Start Simple" icon="seedling">
+  Begin with basic checks (tools and files) and gradually add more validators as your project grows.
+</Card>
+
+<Card title="Version Control" icon="code-branch">
+  Always commit `.envcheck.yaml` to version control so all team members use the same validation rules.
+</Card>
+
+<Card title="Optional vs Required" icon="check-double">
+  Use `required: false` for optional tools or files that enhance development but aren't strictly necessary.
+</Card>
+
+<Card title="Semver Ranges" icon="code-compare">
+  Use flexible version ranges (e.g., `>=18.0.0`) rather than exact versions to avoid unnecessary failures.
+</Card>
+
+## Common Validation Patterns
+
+### Microservices
+
+Each service can have its own configuration:
+
+```
+project/
+├── service-a/
+│   └── .envcheck.yaml
+├── service-b/
+│   └── .envcheck.yaml
+└── service-c/
+    └── .envcheck.yaml
+```
+
+### Monorepo
+
+Use a root configuration for common requirements:
+
+```yaml
+version: "1"
+
+tools:
+  - name: node
+    version: ">=18.0.0"
+  - name: git
+
+files:
+  - path: .env
+    required: true
+```
+
+## Next Steps
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Configuration Guide" icon="gear" href="/configuration/overview">
+    Learn about all available configuration options
+  </Card>
+  
+  <Card title="CLI Commands" icon="terminal" href="/cli/commands">
+    Explore all CLI commands and options
+  </Card>
+  
+  <Card title="CI/CD Integration" icon="server" href="/advanced/ci-cd">
+    Integrate envcheck into your pipelines
+  </Card>
+  
+  <Card title="Examples" icon="code" href="/examples/nodejs">
+    Browse example configurations for different project types
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

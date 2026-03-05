@@ -1,0 +1,450 @@
+---
+title: "JSON Output Format"
+description: "Detailed documentation of envcheck's JSON output structure for programmatic parsing"
+---
+
+## Overview
+
+Use the `--json` flag with envcheck to get machine-readable output. This is especially useful for CI/CD integration, custom tooling, and automated reporting.
+
+```bash
+envcheck --json
+```
+
+## Output Structure
+
+The JSON output follows this structure:
+
+```json
+{
+  "results": [
+    {
+      "status": "success" | "warning" | "error",
+      "message": "Description of the validation result",
+      "suggestion": "Optional suggestion for fixing issues"
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "successes": 0
+  },
+  "passed": true | false
+}
+```
+
+## Field Descriptions
+
+### Root Level Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `results` | Array | List of all validation results |
+| `summary` | Object | Aggregate counts of validation outcomes |
+| `passed` | Boolean | `true` if no errors were found (warnings are allowed), `false` if any errors exist |
+
+### Result Object
+
+Each item in the `results` array contains:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | String | One of: `"success"`, `"warning"`, or `"error"` |
+| `message` | String | Human-readable description of the validation result |
+| `suggestion` | String or null | Optional suggestion for resolving the issue (only present for warnings and errors) |
+
+### Summary Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `errors` | Number | Count of validations that failed with errors |
+| `warnings` | Number | Count of validations that produced warnings |
+| `successes` | Number | Count of validations that passed successfully |
+
+## Example Output
+
+### All Checks Passing
+
+```json
+{
+  "results": [
+    {
+      "status": "success",
+      "message": "node 18.17.0 found",
+      "suggestion": null
+    },
+    {
+      "status": "success",
+      "message": "docker 24.0.6 found",
+      "suggestion": null
+    },
+    {
+      "status": "success",
+      "message": "DATABASE_URL is set",
+      "suggestion": null
+    },
+    {
+      "status": "success",
+      "message": "Port 3000 is available",
+      "suggestion": null
+    },
+    {
+      "status": "success",
+      "message": ".env exists",
+      "suggestion": null
+    }
+  ],
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "successes": 5
+  },
+  "passed": true
+}
+```
+
+### With Errors and Warnings
+
+```json
+{
+  "results": [
+    {
+      "status": "success",
+      "message": "node 18.17.0 found",
+      "suggestion": null
+    },
+    {
+      "status": "error",
+      "message": "docker not found",
+      "suggestion": "Install Docker from https://docs.docker.com/get-docker/"
+    },
+    {
+      "status": "error",
+      "message": "DATABASE_URL is not set",
+      "suggestion": "Set DATABASE_URL environment variable"
+    },
+    {
+      "status": "warning",
+      "message": "Port 3000 is in use",
+      "suggestion": "Free up port 3000 or configure your app to use a different port"
+    },
+    {
+      "status": "success",
+      "message": ".env exists",
+      "suggestion": null
+    }
+  ],
+  "summary": {
+    "errors": 2,
+    "warnings": 1,
+    "successes": 2
+  },
+  "passed": false
+}
+```
+
+### Version Mismatch
+
+```json
+{
+  "results": [
+    {
+      "status": "error",
+      "message": "node version 16.20.0 does not satisfy requirement >=18.0.0",
+      "suggestion": "Install Node.js 18.0.0 or higher"
+    },
+    {
+      "status": "success",
+      "message": "git 2.42.0 found",
+      "suggestion": null
+    }
+  ],
+  "summary": {
+    "errors": 1,
+    "warnings": 0,
+    "successes": 1
+  },
+  "passed": false
+}
+```
+
+## Parsing Examples
+
+### Using jq (Command Line)
+
+Extract specific information using `jq`:
+
+```bash
+# Check if validation passed
+envcheck --json | jq -r '.passed'
+
+# Get error count
+envcheck --json | jq -r '.summary.errors'
+
+# List all error messages
+envcheck --json | jq -r '.results[] | select(.status == "error") | .message'
+
+# Get errors with suggestions
+envcheck --json | jq -r '.results[] | select(.status == "error") | "\(.message)\n  Suggestion: \(.suggestion)"'
+
+# Check if specific validation passed
+envcheck --json | jq -r '.results[] | select(.message | contains("node")) | .status'
+```
+
+### Python Script
+
+```python parse_envcheck.py
+import json
+import subprocess
+import sys
+
+def run_envcheck():
+    """Run envcheck and parse the JSON output."""
+    result = subprocess.run(
+        ['envcheck', '--json'],
+        capture_output=True,
+        text=True
+    )
+    
+    try:
+        data = json.loads(result.stdout)
+        return data
+    except json.JSONDecodeError:
+        print("Failed to parse envcheck output")
+        sys.exit(1)
+
+def main():
+    data = run_envcheck()
+    
+    print(f"Validation Status: {'PASSED' if data['passed'] else 'FAILED'}")
+    print(f"\nSummary:")
+    print(f"  ✓ Successes: {data['summary']['successes']}")
+    print(f"  ⚠ Warnings:  {data['summary']['warnings']}")
+    print(f"  ✗ Errors:    {data['summary']['errors']}")
+    
+    # Print detailed errors
+    errors = [r for r in data['results'] if r['status'] == 'error']
+    if errors:
+        print("\nErrors:")
+        for error in errors:
+            print(f"  ✗ {error['message']}")
+            if error['suggestion']:
+                print(f"    💡 {error['suggestion']}")
+    
+    # Exit with appropriate code
+    sys.exit(0 if data['passed'] else 1)
+
+if __name__ == '__main__':
+    main()
+```
+
+### Node.js Script
+
+```javascript parse-envcheck.js
+const { execSync } = require('child_process');
+
+function runEnvcheck() {
+  try {
+    const output = execSync('envcheck --json', { encoding: 'utf-8' });
+    return JSON.parse(output);
+  } catch (error) {
+    // envcheck returns non-zero exit code on failure
+    // but we still want to parse the output
+    if (error.stdout) {
+      return JSON.parse(error.stdout);
+    }
+    throw error;
+  }
+}
+
+function main() {
+  const data = runEnvcheck();
+  
+  console.log(`Validation Status: ${data.passed ? 'PASSED' : 'FAILED'}`);
+  console.log('\nSummary:');
+  console.log(`  ✓ Successes: ${data.summary.successes}`);
+  console.log(`  ⚠ Warnings:  ${data.summary.warnings}`);
+  console.log(`  ✗ Errors:    ${data.summary.errors}`);
+  
+  // Print errors and warnings
+  const issues = data.results.filter(r => r.status !== 'success');
+  if (issues.length > 0) {
+    console.log('\nIssues:');
+    issues.forEach(issue => {
+      const icon = issue.status === 'error' ? '✗' : '⚠';
+      console.log(`  ${icon} ${issue.message}`);
+      if (issue.suggestion) {
+        console.log(`    💡 ${issue.suggestion}`);
+      }
+    });
+  }
+  
+  process.exit(data.passed ? 0 : 1);
+}
+
+main();
+```
+
+### Go Script
+
+```go parse_envcheck.go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+)
+
+type ValidationResult struct {
+	Status     string  `json:"status"`
+	Message    string  `json:"message"`
+	Suggestion *string `json:"suggestion"`
+}
+
+type Summary struct {
+	Errors    int `json:"errors"`
+	Warnings  int `json:"warnings"`
+	Successes int `json:"successes"`
+}
+
+type EnvcheckOutput struct {
+	Results []ValidationResult `json:"results"`
+	Summary Summary            `json:"summary"`
+	Passed  bool               `json:"passed"`
+}
+
+func main() {
+	cmd := exec.Command("envcheck", "--json")
+	output, err := cmd.Output()
+	if err != nil {
+		// envcheck may exit with non-zero code, but output is still valid
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			output = exitErr.Stdout
+		} else {
+			fmt.Fprintf(os.Stderr, "Failed to run envcheck: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	var result EnvcheckOutput
+	if err := json.Unmarshal(output, &result); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse JSON: %v\n", err)
+		os.Exit(1)
+	}
+
+	status := "FAILED"
+	if result.Passed {
+		status = "PASSED"
+	}
+
+	fmt.Printf("Validation Status: %s\n", status)
+	fmt.Println("\nSummary:")
+	fmt.Printf("  ✓ Successes: %d\n", result.Summary.Successes)
+	fmt.Printf("  ⚠ Warnings:  %d\n", result.Summary.Warnings)
+	fmt.Printf("  ✗ Errors:    %d\n", result.Summary.Errors)
+
+	// Print errors
+	for _, r := range result.Results {
+		if r.Status == "error" {
+			fmt.Printf("  ✗ %s\n", r.Message)
+			if r.Suggestion != nil {
+				fmt.Printf("    💡 %s\n", *r.Suggestion)
+			}
+		}
+	}
+
+	if !result.Passed {
+		os.Exit(1)
+	}
+}
+```
+
+## Validation Status Types
+
+### Success
+
+```json
+{
+  "status": "success",
+  "message": "git 2.42.0 found",
+  "suggestion": null
+}
+```
+
+Indicates the validation check passed successfully.
+
+### Warning
+
+```json
+{
+  "status": "warning",
+  "message": "PORT is not set",
+  "suggestion": "Set PORT environment variable or your app will use default port 3000"
+}
+```
+
+Indicates a non-critical issue. Warnings do not cause `passed` to be `false`.
+
+### Error
+
+```json
+{
+  "status": "error",
+  "message": "DATABASE_URL is not set",
+  "suggestion": "Set DATABASE_URL environment variable"
+}
+```
+
+Indicates a critical issue that causes `passed` to be `false`.
+
+## Common Patterns
+
+### Save to File
+
+```bash
+envcheck --json > envcheck-results.json
+```
+
+### Combine with Verbose Mode
+
+```bash
+# Get both human-readable and JSON output
+envcheck --verbose 2>&1 | tee envcheck.log
+envcheck --json > envcheck.json
+```
+
+### Conditional Logic in Scripts
+
+```bash
+#!/bin/bash
+
+OUTPUT=$(envcheck --json)
+PASSED=$(echo $OUTPUT | jq -r '.passed')
+
+if [ "$PASSED" = "true" ]; then
+  echo "✅ Environment is ready"
+  npm start
+else
+  echo "❌ Environment validation failed"
+  echo $OUTPUT | jq -r '.results[] | select(.status == "error") | .message'
+  exit 1
+fi
+```
+
+<Tip>
+  The `suggestion` field is always `null` for successful validations and may be `null` for some errors/warnings if no specific suggestion is available.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="CI/CD Integration" icon="code-branch" href="/advanced/ci-cd">
+    Learn how to use JSON output in CI/CD pipelines
+  </Card>
+  
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Common issues and debugging tips
+  </Card>
+</CardGroup>

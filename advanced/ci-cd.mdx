@@ -1,0 +1,297 @@
+---
+title: "CI/CD Integration"
+description: "Use envcheck in your CI/CD pipelines to validate environments before deployment"
+---
+
+## Overview
+
+envcheck is designed to work seamlessly in CI/CD pipelines. Use the `--json` flag to get machine-readable output that can be parsed by your automation scripts.
+
+## GitHub Actions
+
+### Basic Workflow
+
+Add envcheck to your GitHub Actions workflow to validate the environment before running tests or deployments:
+
+```yaml .github/workflows/validate.yml
+name: Environment Validation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-environment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install envcheck
+        run: |
+          curl -L https://github.com/dotandev/envcheck/releases/latest/download/envcheck-linux-x86_64 -o envcheck
+          chmod +x envcheck
+          sudo mv envcheck /usr/local/bin/
+      
+      - name: Run environment checks
+        run: envcheck --json
+      
+      - name: Upload validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: envcheck-results
+          path: envcheck-output.json
+```
+
+### Advanced Workflow with Parsing
+
+Parse the JSON output and fail the build only on errors, allowing warnings to pass:
+
+```yaml .github/workflows/validate-advanced.yml
+name: Advanced Environment Validation
+
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install envcheck
+        run: |
+          curl -L https://github.com/dotandev/envcheck/releases/latest/download/envcheck-linux-x86_64 -o envcheck
+          chmod +x envcheck
+          sudo mv envcheck /usr/local/bin/
+      
+      - name: Run environment validation
+        id: envcheck
+        run: |
+          envcheck --json > envcheck-output.json
+          echo "passed=$(jq -r '.passed' envcheck-output.json)" >> $GITHUB_OUTPUT
+          echo "errors=$(jq -r '.summary.errors' envcheck-output.json)" >> $GITHUB_OUTPUT
+          echo "warnings=$(jq -r '.summary.warnings' envcheck-output.json)" >> $GITHUB_OUTPUT
+        continue-on-error: true
+      
+      - name: Display summary
+        run: |
+          echo "Environment Validation Results:"
+          echo "- Errors: ${{ steps.envcheck.outputs.errors }}"
+          echo "- Warnings: ${{ steps.envcheck.outputs.warnings }}"
+          echo "- Status: ${{ steps.envcheck.outputs.passed == 'true' && 'PASSED' || 'FAILED' }}"
+      
+      - name: Fail on errors
+        if: steps.envcheck.outputs.passed != 'true'
+        run: |
+          echo "❌ Environment validation failed with ${{ steps.envcheck.outputs.errors }} error(s)"
+          exit 1
+```
+
+## GitLab CI
+
+### Basic Pipeline
+
+Integrate envcheck into your GitLab CI pipeline:
+
+```yaml .gitlab-ci.yml
+stages:
+  - validate
+  - build
+  - test
+  - deploy
+
+validate:environment:
+  stage: validate
+  image: ubuntu:latest
+  before_script:
+    - apt-get update && apt-get install -y curl jq
+    - curl -L https://github.com/dotandev/envcheck/releases/latest/download/envcheck-linux-x86_64 -o /usr/local/bin/envcheck
+    - chmod +x /usr/local/bin/envcheck
+  script:
+    - envcheck --json | tee envcheck-output.json
+    - |
+      if [ "$(jq -r '.passed' envcheck-output.json)" != "true" ]; then
+        echo "Environment validation failed"
+        jq -r '.results[] | select(.status == "error") | "❌ " + .message' envcheck-output.json
+        exit 1
+      fi
+  artifacts:
+    reports:
+      junit: envcheck-output.json
+    paths:
+      - envcheck-output.json
+    when: always
+```
+
+### Multi-Environment Pipeline
+
+Validate different environments with separate configurations:
+
+```yaml .gitlab-ci.yml
+stages:
+  - validate
+  - deploy
+
+validate:dev:
+  stage: validate
+  script:
+    - envcheck --config .envcheck.dev.yaml --json
+  only:
+    - develop
+
+validate:staging:
+  stage: validate
+  script:
+    - envcheck --config .envcheck.staging.yaml --json
+  only:
+    - staging
+
+validate:production:
+  stage: validate
+  script:
+    - envcheck --config .envcheck.prod.yaml --json
+  only:
+    - main
+```
+
+## Jenkins
+
+### Declarative Pipeline
+
+```groovy Jenkinsfile
+pipeline {
+    agent any
+    
+    stages {
+        stage('Validate Environment') {
+            steps {
+                script {
+                    sh '''
+                        curl -L https://github.com/dotandev/envcheck/releases/latest/download/envcheck-linux-x86_64 -o envcheck
+                        chmod +x envcheck
+                        ./envcheck --json > envcheck-output.json
+                    '''
+                    
+                    def result = readJSON file: 'envcheck-output.json'
+                    
+                    if (result.passed) {
+                        echo "✅ Environment validation passed"
+                        echo "Errors: ${result.summary.errors}"
+                        echo "Warnings: ${result.summary.warnings}"
+                    } else {
+                        error "❌ Environment validation failed with ${result.summary.errors} error(s)"
+                    }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'envcheck-output.json', fingerprint: true
+                }
+            }
+        }
+    }
+}
+```
+
+## CircleCI
+
+```yaml .circleci/config.yml
+version: 2.1
+
+jobs:
+  validate-environment:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: Install envcheck
+          command: |
+            curl -L https://github.com/dotandev/envcheck/releases/latest/download/envcheck-linux-x86_64 -o envcheck
+            chmod +x envcheck
+            sudo mv envcheck /usr/local/bin/
+      - run:
+          name: Run validation
+          command: |
+            envcheck --json | tee envcheck-output.json
+            if [ "$(jq -r '.passed' envcheck-output.json)" != "true" ]; then
+              exit 1
+            fi
+      - store_artifacts:
+          path: envcheck-output.json
+          destination: validation-results
+
+workflows:
+  version: 2
+  validate-and-deploy:
+    jobs:
+      - validate-environment
+```
+
+## Best Practices
+
+<Card title="Use Config Files" icon="file">
+  Store your `.envcheck.yaml` in version control so all developers and CI/CD systems use the same validation rules.
+</Card>
+
+<Card title="Cache the Binary" icon="bolt">
+  Cache the envcheck binary in your CI/CD pipeline to speed up builds. Most CI systems support caching between runs.
+</Card>
+
+<Card title="Separate Configs per Environment" icon="layer-group">
+  Use different configuration files for development, staging, and production environments:
+  - `.envcheck.dev.yaml` - Minimal requirements for local development
+  - `.envcheck.staging.yaml` - Staging environment requirements
+  - `.envcheck.prod.yaml` - Strict production requirements
+</Card>
+
+<Card title="Parse JSON Output" icon="code">
+  Don't rely solely on exit codes. Parse the JSON output to get detailed information about failures and create custom notifications.
+</Card>
+
+## Environment Variables in CI
+
+When validating environment variables in CI/CD, remember to:
+
+1. **Set secrets in your CI system**: Use GitHub Secrets, GitLab CI Variables, or Jenkins Credentials
+2. **Mark sensitive vars as optional**: Use `required: false` for secrets in your config
+3. **Use different configs**: Separate validation rules for CI vs local development
+
+```yaml .envcheck.ci.yaml
+version: "1"
+env_vars:
+  # CI systems often don't need all local dev vars
+  - name: DATABASE_URL
+    required: false
+  - name: API_KEY
+    required: false
+  - name: CI
+    required: true
+```
+
+<Tip>
+  Use `envcheck --config .envcheck.ci.yaml` in your CI pipeline and `.envcheck.yaml` locally.
+</Tip>
+
+## Exit Codes
+
+envcheck uses standard exit codes for CI/CD integration:
+
+- `0` - All checks passed (may include warnings)
+- `1` - One or more checks failed with errors
+
+Warnings do not cause a non-zero exit code. Use the JSON output if you need to fail on warnings.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="JSON Output Format" icon="brackets-curly" href="/advanced/json-output">
+    Learn about the structure of JSON output
+  </Card>
+  
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Common issues and solutions
+  </Card>
+</CardGroup>

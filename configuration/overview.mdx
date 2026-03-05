@@ -1,0 +1,128 @@
+---
+title: Configuration Overview
+description: Understanding the envcheck configuration file structure
+---
+
+## Configuration File
+
+envcheck uses a YAML configuration file to define environment validation rules. The configuration file specifies which tools, environment variables, ports, files, and network endpoints should be checked.
+
+## File Location
+
+envcheck automatically searches for configuration files in the following order:
+
+1. `.envcheck.yaml`
+2. `.envcheck.yml`
+3. `envcheck.yaml`
+4. `envcheck.yml`
+
+The first file found in the current directory will be used.
+
+<Tip>
+If no configuration file is found, you can create one by running `envcheck init` or by creating a `.envcheck.yaml` file manually.
+</Tip>
+
+## Configuration Structure
+
+A configuration file consists of a required `version` field and optional validator sections:
+
+```yaml
+version: "1"
+
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+
+env_vars:
+  - name: DATABASE_URL
+    required: true
+
+ports:
+  - 3000
+  - 5432
+
+files:
+  - path: .env
+    required: true
+
+network:
+  - url: https://api.example.com/health
+    status_code: 200
+```
+
+## Version Field
+
+<ParamField path="version" type="string" required>
+  The configuration file format version. Currently, only `"1"` is supported.
+</ParamField>
+
+```yaml
+version: "1"
+```
+
+<Warning>
+The `version` field is required. Omitting it will cause the configuration file to fail validation.
+</Warning>
+
+## Validator Sections
+
+All validator sections are optional and default to empty arrays if not specified:
+
+<ParamField path="tools" type="array" default="[]">
+  Tool validation checks. See [Tool Validation](/configuration/tools) for details.
+</ParamField>
+
+<ParamField path="env_vars" type="array" default="[]">
+  Environment variable checks. See [Environment Variables](/configuration/environment-variables) for details.
+</ParamField>
+
+<ParamField path="ports" type="array" default="[]">
+  Port availability checks. See [Port Checks](/configuration/ports) for details.
+</ParamField>
+
+<ParamField path="files" type="array" default="[]">
+  File and directory validation. See [File Validation](/configuration/files) for details.
+</ParamField>
+
+<ParamField path="network" type="array" default="[]">
+  Network connectivity checks. See [Network Checks](/configuration/network) for details.
+</ParamField>
+
+## Complete Example
+
+Here's a complete configuration file for a Node.js project:
+
+```yaml
+version: "1"
+
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+  - name: npm
+    version: ">=9.0.0"
+    required: true
+  - name: git
+    required: true
+
+env_vars:
+  - name: NODE_ENV
+    required: false
+  - name: DATABASE_URL
+    required: true
+
+ports:
+  - 3000
+  - 5432
+
+files:
+  - path: .env
+    required: true
+  - path: package.json
+    required: true
+```
+
+## Loading Configuration
+
+The configuration file is loaded from src/config.rs:66 using the `Config::load()` method, which reads and parses the YAML file. The `Config::find_config()` method (src/config.rs:76) automatically searches for configuration files in the standard locations.

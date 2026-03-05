@@ -1,0 +1,138 @@
+---
+title: Commands
+description: Complete reference for all envcheck CLI commands
+---
+
+## envcheck
+
+The main command validates your development environment against the configuration file.
+
+### Usage
+
+```bash
+envcheck [OPTIONS]
+```
+
+### Description
+
+Runs all validation checks defined in your `.envcheck.yaml` configuration file. By default, it looks for the configuration file in the current directory.
+
+### Examples
+
+**Run validation with default config:**
+
+```bash
+envcheck
+```
+
+**Run with custom config file:**
+
+```bash
+envcheck --config ./configs/dev.yaml
+```
+
+**Run with verbose output:**
+
+```bash
+envcheck --verbose
+```
+
+**Get JSON output:**
+
+```bash
+envcheck --json
+```
+
+**Combine options:**
+
+```bash
+envcheck --config .envcheck.prod.yaml --verbose --json
+```
+
+### Output Example
+
+```bash
+$ envcheck
+
+Running environment checks...
+
+✓ node version 18.16.0 satisfies >=18.0.0
+✓ git is installed
+⚠ NODE_ENV not set
+  Consider setting NODE_ENV for your application
+✓ Port 3000 is available
+✓ File .env exists
+✓ https://github.com responded with status 200
+
+⚠ 1 warning(s) found, but you can proceed.
+```
+
+---
+
+## envcheck init
+
+Initializes a new `.envcheck.yaml` configuration file in the current directory.
+
+### Usage
+
+```bash
+envcheck init
+```
+
+### Description
+
+Creates a `.envcheck.yaml` file with a default template that includes examples for:
+- Tool version checks (Node.js, Git)
+- Environment variable validation
+- Port availability checks
+- File existence checks
+- Network connectivity tests
+
+This command will fail if `.envcheck.yaml` already exists in the current directory.
+
+### Examples
+
+**Initialize a new config:**
+
+```bash
+envcheck init
+```
+
+**Output:**
+
+```bash
+$ envcheck init
+Successfully initialized .envcheck.yaml
+```
+
+**If config already exists:**
+
+```bash
+$ envcheck init
+Error: .envcheck.yaml already exists in the current directory
+```
+
+### Generated Template
+
+The `init` command creates a configuration file with the following structure:
+
+```yaml
+version: "1"
+tools:
+  - name: node
+    version: ">=18.0.0"
+  - name: git
+env_vars:
+  - name: NODE_ENV
+    required: false
+ports:
+  - 3000
+files:
+  - path: .env
+    required: false
+network:
+  - url: https://github.com
+    status_code: 200
+```
+
+You can edit this file to match your project's specific requirements.

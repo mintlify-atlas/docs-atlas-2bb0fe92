@@ -1,0 +1,292 @@
+---
+title: Go Project
+description: Environment validation for Go applications
+---
+
+## Overview
+
+This example shows a minimal envcheck configuration for a Go project. It validates the Go toolchain version and checks for required project files while allowing optional Go environment variables.
+
+## Configuration
+
+```yaml .envcheck.yaml
+version: "1"
+
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+
+env_vars:
+  - name: GOPATH
+    required: false
+  - name: GOBIN
+    required: false
+
+files:
+  - path: go.mod
+    required: true
+  - path: main.go
+    required: false
+```
+
+## What This Checks
+
+### Tools
+
+- **go >=1.18.0**: Ensures you have Go 1.18+ with generics support and improved module management
+
+### Environment Variables
+
+- **GOPATH** (optional): Go workspace path - typically not needed with Go modules, but checked if set
+- **GOBIN** (optional): Installation directory for executables - checked if custom location is configured
+
+### Files
+
+- **go.mod**: Go module file - required for dependency management in modern Go projects
+- **main.go** (optional): Entry point for executable - not all Go projects are applications
+
+## Expected Output
+
+<CodeGroup>
+
+```bash Success
+$ envcheck
+
+✓ Tools
+  ✓ go: 1.21.5 (>= 1.18.0)
+
+✓ Environment Variables
+  ✓ GOPATH: /home/user/go
+  ✓ GOBIN: not set (optional)
+
+✓ Files
+  ✓ go.mod: exists
+  ✓ main.go: exists
+
+All checks passed!
+```
+
+```bash Version Mismatch
+$ envcheck
+
+✗ Tools
+  ✗ go: 1.17.8 (expected >= 1.18.0)
+
+✓ Environment Variables
+  ✓ GOPATH: not set (optional)
+  ✓ GOBIN: not set (optional)
+
+✗ Files
+  ✗ go.mod: not found
+  ✓ main.go: not found (optional)
+
+Checks failed!
+```
+
+</CodeGroup>
+
+## Tips for Go Projects
+
+<Tip>
+With Go modules (introduced in Go 1.11 and default since 1.16), GOPATH is largely optional. The configuration reflects this modern practice.
+</Tip>
+
+<Warning>
+If you're upgrading from Go 1.17 to 1.18+, review the release notes for breaking changes, especially around generics and workspace features.
+</Warning>
+
+<Info>
+Go 1.18 introduced workspaces (`go.work`). For multi-module repositories, consider adding `go.work` as an optional file check.
+</Info>
+
+## Common Variations
+
+### Web API Service
+
+Add service-specific requirements:
+
+```yaml
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+
+env_vars:
+  - name: PORT
+    required: false
+  - name: DATABASE_URL
+    required: true
+  - name: API_KEY
+    required: true
+
+ports:
+  - 8080
+
+files:
+  - path: go.mod
+    required: true
+  - path: main.go
+    required: true
+```
+
+### Microservices Architecture
+
+Validate service dependencies:
+
+```yaml
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+  - name: docker
+    required: true
+  - name: kubectl
+    required: false
+
+env_vars:
+  - name: SERVICE_NAME
+    required: true
+  - name: CONSUL_ADDR
+    required: false
+  - name: JAEGER_ENDPOINT
+    required: false
+
+files:
+  - path: go.mod
+    required: true
+  - path: Dockerfile
+    required: true
+```
+
+### CLI Tool Development
+
+Check CLI-specific tooling:
+
+```yaml
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+  - name: goreleaser
+    required: false
+
+env_vars:
+  - name: GOBIN
+    required: false
+
+files:
+  - path: go.mod
+    required: true
+  - path: main.go
+    required: true
+  - path: .goreleaser.yaml
+    required: false
+```
+
+### Library/Package Development
+
+Minimal checks for libraries:
+
+```yaml
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+
+files:
+  - path: go.mod
+    required: true
+  - path: go.sum
+    required: true
+  - path: README.md
+    required: true
+```
+
+### Workspace Setup (Go 1.18+)
+
+Multi-module workspace validation:
+
+```yaml
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+
+files:
+  - path: go.work
+    required: true
+  - path: module1/go.mod
+    required: true
+  - path: module2/go.mod
+    required: true
+```
+
+### gRPC Service
+
+Validate Protocol Buffers toolchain:
+
+```yaml
+tools:
+  - name: go
+    version: ">=1.18.0"
+    required: true
+  - name: protoc
+    required: true
+  - name: protoc-gen-go
+    required: true
+  - name: protoc-gen-go-grpc
+    required: true
+
+files:
+  - path: go.mod
+    required: true
+  - path: proto
+    required: true
+
+ports:
+  - 50051  # Default gRPC port
+```
+
+## Go-Specific Considerations
+
+### Go Version Management
+
+Use one of these tools to manage Go versions:
+- **gvm**: Go Version Manager
+- **asdf**: Multi-runtime version manager with Go plugin
+- **goenv**: Simple Go version management
+
+### Module Initialization
+
+If `go.mod` is missing, initialize it:
+```bash
+go mod init github.com/username/project
+```
+
+### Private Modules
+
+For private repositories, configure GOPRIVATE:
+```yaml
+env_vars:
+  - name: GOPRIVATE
+    required: true
+    pattern: "^github\.com/your-org/.*$"
+```
+
+### Build Tags
+
+For projects using build tags, document required environment:
+```yaml
+env_vars:
+  - name: CGO_ENABLED
+    required: false
+    pattern: "^(0|1)$"
+```
+
+## Learn More
+
+- [Tools Validator](/configuration/tools) - Go version constraints
+- [Environment Variables](/configuration/environment-variables) - Go-specific environment setup
+- [File Validator](/configuration/files) - Module and workspace structure
+- [Port Checker](/configuration/ports) - Service port validation

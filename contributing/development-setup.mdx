@@ -1,0 +1,228 @@
+---
+title: Development Setup
+description: Set up your local development environment for contributing to envcheck
+---
+
+This guide will help you set up your local development environment to start contributing to envcheck.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Rust** (latest stable version)
+- **Git**
+- **A GitHub account** (for forking and pull requests)
+
+## Initial Setup
+
+### 1. Fork and Clone
+
+First, fork the envcheck repository on GitHub, then clone your fork:
+
+```bash
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/envcheck.git
+cd envcheck
+```
+
+### 2. Build the Project
+
+Build envcheck to ensure everything is set up correctly:
+
+```bash
+# Build the project
+cargo build
+```
+
+This will download dependencies and compile the project. The first build may take a few minutes.
+
+### 3. Run Tests
+
+Verify that all tests pass:
+
+```bash
+# Run all tests
+cargo test
+```
+
+All tests should pass on a fresh clone. If any tests fail, please report this as an issue.
+
+## Development Workflow
+
+### Running envcheck Locally
+
+You can run your local version of envcheck:
+
+```bash
+# Run with help flag
+cargo run -- --help
+
+# Run in the current directory
+cargo run
+
+# Run with specific config
+cargo run -- --config path/to/.envcheck.yaml
+```
+
+### Code Formatting
+
+Before committing, always format your code:
+
+```bash
+# Format all code
+cargo fmt
+```
+
+This ensures consistent code style across the project.
+
+### Linting
+
+Run Clippy to catch common mistakes and improve code quality:
+
+```bash
+# Run clippy
+cargo clippy
+```
+
+Fix any warnings or errors that Clippy reports. Clippy helps catch common mistakes and suggests more idiomatic Rust code.
+
+### Running Specific Tests
+
+When working on a specific feature, you can run targeted tests:
+
+```bash
+# Run tests for a specific module
+cargo test validators
+
+# Run a specific test
+cargo test test_tool_validator
+
+# Run tests with output
+cargo test -- --nocapture
+```
+
+## Project Structure
+
+Understanding the project structure will help you navigate the codebase:
+
+```
+envcheck/
+├── src/
+│   ├── main.rs              # CLI entry point
+│   ├── config.rs            # Config parsing
+│   ├── validators/          # All validators
+│   │   ├── mod.rs          # Validator trait
+│   │   ├── tool.rs         # Tool checking
+│   │   ├── env.rs          # Env var checking
+│   │   ├── port.rs         # Port checking
+│   │   ├── file.rs         # File checking
+│   │   └── network.rs      # Network checking
+│   └── reporter.rs          # Output formatting
+└── tests/                   # Integration tests
+```
+
+### Key Components
+
+- **`main.rs`**: Entry point for the CLI application
+- **`config.rs`**: Handles parsing of `.envcheck.yaml` configuration files
+- **`validators/`**: Contains all validation logic, with each validator type in its own file
+- **`reporter.rs`**: Formats and displays validation results
+- **`tests/`**: Integration tests that test the full application
+
+## Making Changes
+
+### 1. Create a Branch
+
+Create a new branch for your changes:
+
+```bash
+git checkout -b feature/my-new-feature
+```
+
+### 2. Make Your Changes
+
+Edit the relevant files. Follow the coding style guidelines and add tests for new functionality.
+
+### 3. Test Your Changes
+
+Ensure all tests pass and your code is properly formatted:
+
+```bash
+# Run tests
+cargo test
+
+# Format code
+cargo fmt
+
+# Check for issues
+cargo clippy
+```
+
+### 4. Commit Your Changes
+
+Commit with a clear, descriptive message:
+
+```bash
+git add .
+git commit -m "Add support for custom validators"
+```
+
+### 5. Push and Create PR
+
+Push your branch and create a pull request:
+
+```bash
+git push origin feature/my-new-feature
+```
+
+Then visit GitHub to create your pull request.
+
+## Debugging Tips
+
+### Enable Debug Logging
+
+You can add debug logging to your code:
+
+```rust
+println!("Debug: {:?}", some_variable);
+```
+
+Or use the `dbg!` macro:
+
+```rust
+dbg!(&some_variable);
+```
+
+### Run with Backtrace
+
+For better error messages:
+
+```bash
+RUST_BACKTRACE=1 cargo run
+```
+
+## Common Issues
+
+### Build Failures
+
+If you encounter build failures:
+
+1. Ensure you're using the latest stable Rust: `rustup update`
+2. Clean the build directory: `cargo clean`
+3. Rebuild: `cargo build`
+
+### Test Failures
+
+If tests fail:
+
+1. Ensure you're on the latest `main` branch
+2. Check if you have all required dependencies installed
+3. Run tests with output to see detailed errors: `cargo test -- --nocapture`
+
+## Next Steps
+
+Now that your environment is set up:
+
+- Check out the [Adding Validators](/contributing/adding-validators) guide to learn how to add new validator types
+- Look for `good first issue` labels on GitHub
+- Join the discussion in existing issues and pull requests

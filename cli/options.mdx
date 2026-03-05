@@ -1,0 +1,220 @@
+---
+title: Options
+description: Global flags and options for envcheck CLI
+---
+
+## Global Options
+
+These options can be used with the main `envcheck` command to control its behavior.
+
+---
+
+## --config, -c
+
+Specify a custom path to the configuration file.
+
+### Syntax
+
+```bash
+envcheck --config <PATH>
+envcheck -c <PATH>
+```
+
+### Default
+
+If not specified, envcheck looks for `.envcheck.yaml` in the current directory.
+
+### Examples
+
+```bash
+# Use a config file in a subdirectory
+envcheck --config ./configs/development.yaml
+
+# Use short form
+envcheck -c .envcheck.prod.yaml
+
+# Relative path
+envcheck --config ../shared/.envcheck.yaml
+
+# Absolute path
+envcheck --config /etc/envcheck/config.yaml
+```
+
+---
+
+## --verbose, -v
+
+Enable verbose output to see detailed information about the validation process.
+
+### Syntax
+
+```bash
+envcheck --verbose
+envcheck -v
+```
+
+### Description
+
+When enabled, displays additional debugging information including:
+- Loaded configuration details
+- Internal validation states
+- Detailed error traces
+
+### Examples
+
+```bash
+# Enable verbose mode
+envcheck --verbose
+
+# Use short form
+envcheck -v
+
+# Combine with other options
+envcheck -v --config dev.yaml
+```
+
+### Output Example
+
+```bash
+$ envcheck --verbose
+Loaded config: Config { version: "1", tools: [ToolCheck { name: "node", version: Some(">=18.0.0") }], ... }
+
+Running environment checks...
+
+✓ node version 18.16.0 satisfies >=18.0.0
+✓ All checks passed!
+```
+
+---
+
+## --json
+
+Output validation results in JSON format instead of human-readable text.
+
+### Syntax
+
+```bash
+envcheck --json
+```
+
+### Description
+
+When enabled, outputs structured JSON data that includes:
+- Individual validation results with status, message, and suggestions
+- Summary statistics (errors, warnings, successes)
+- Overall pass/fail status
+
+This is useful for:
+- CI/CD pipeline integration
+- Programmatic processing of results
+- Logging and monitoring systems
+
+### Examples
+
+```bash
+# Get JSON output
+envcheck --json
+
+# Combine with custom config
+envcheck --config prod.yaml --json
+
+# Save to file
+envcheck --json > results.json
+
+# Parse with jq
+envcheck --json | jq '.summary.errors'
+```
+
+### Output Format
+
+```json
+{
+  "results": [
+    {
+      "status": "success",
+      "message": "node version 18.16.0 satisfies >=18.0.0",
+      "suggestion": null
+    },
+    {
+      "status": "warning",
+      "message": "NODE_ENV not set",
+      "suggestion": "Consider setting NODE_ENV for your application"
+    },
+    {
+      "status": "error",
+      "message": "Port 3000 is already in use",
+      "suggestion": "Stop the process using port 3000 or use a different port"
+    }
+  ],
+  "summary": {
+    "errors": 1,
+    "warnings": 1,
+    "successes": 1
+  },
+  "passed": false
+}
+```
+
+---
+
+## --help, -h
+
+Display help information about envcheck commands and options.
+
+### Syntax
+
+```bash
+envcheck --help
+envcheck -h
+```
+
+### Examples
+
+```bash
+# Show main help
+envcheck --help
+
+# Show help for init command
+envcheck init --help
+```
+
+---
+
+## --version, -V
+
+Display the version of envcheck.
+
+### Syntax
+
+```bash
+envcheck --version
+envcheck -V
+```
+
+### Output Example
+
+```bash
+$ envcheck --version
+envcheck 0.1.0
+```
+
+---
+
+## Option Combinations
+
+Multiple options can be combined in a single command:
+
+```bash
+# Verbose output with JSON format
+envcheck --verbose --json
+
+# Custom config with verbose mode
+envcheck -c prod.yaml -v
+
+# All options together
+envcheck --config ./configs/staging.yaml --verbose --json
+```
+
+<Note>
+The `--json` option takes precedence over formatting. When combined with `--verbose`, verbose output is shown before the JSON output.
+</Note>

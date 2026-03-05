@@ -1,0 +1,163 @@
+---
+title: Introduction
+description: A lightweight CLI tool that validates your development environment against project requirements
+---
+
+## What is envcheck?
+
+envcheck is a fast, lightweight CLI tool written in Rust that validates development environments against project requirements. It eliminates "works on my machine" problems by ensuring everyone on your team has the right tools, versions, and configurations before they start working.
+
+## The Problem
+
+How many times have you encountered these scenarios?
+
+- A new developer joins your team and spends hours installing dependencies
+- Your CI pipeline fails because a developer's local environment differs from production
+- A critical bug only appears in certain environments due to version mismatches
+- Team members forget to set required environment variables
+
+These issues waste valuable development time and create frustration across teams.
+
+## The Solution
+
+With envcheck, you define your environment requirements once in a `.envcheck.yaml` file, and everyone can validate their setup in seconds:
+
+```bash
+$ envcheck
+
+Running environment checks...
+
+✓ node 18.17.0 found
+✓ docker found
+✗ DATABASE_URL is not set
+  Set DATABASE_URL environment variable
+✓ Port 3000 is available
+✓ .env exists
+
+--- 1 issue(s) found. Fix them to continue.
+```
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Fast" icon="bolt">
+    Written in Rust, compiled to a single binary with zero runtime dependencies. Validation completes in milliseconds.
+  </Card>
+  
+  <Card title="Simple" icon="file">
+    Just add a `.envcheck.yaml` file to your project. No complex configuration or setup required.
+  </Card>
+  
+  <Card title="Comprehensive" icon="list-check">
+    Validates tools, versions, environment variables, ports, files, directories, and network connectivity.
+  </Card>
+  
+  <Card title="Cross-platform" icon="globe">
+    Works seamlessly on macOS, Linux, and Windows without any platform-specific tweaks.
+  </Card>
+</CardGroup>
+
+## What Can You Check?
+
+### Tools and Versions
+
+Verify that required development tools are installed with proper version constraints using semver:
+
+```yaml
+tools:
+  - name: node
+    version: ">=18.0.0"
+    required: true
+  - name: docker
+    required: false
+```
+
+Supported tools include `node`, `npm`, `go`, `rust`, `cargo`, `python`, `docker`, `git`, `java`, `ruby`, and more.
+
+### Environment Variables
+
+Ensure critical environment variables are set and optionally match specific patterns:
+
+```yaml
+env_vars:
+  - name: DATABASE_URL
+    required: true
+  - name: NODE_ENV
+    pattern: "^(development|test|production)$"
+    required: true
+```
+
+### Ports
+
+Check that required ports are available before starting services:
+
+```yaml
+ports:
+  - 3000
+  - 5432
+```
+
+### Files and Directories
+
+Validate file existence, permissions, and directory structure:
+
+```yaml
+files:
+  - path: .env
+    required: true
+    permissions: 0o600
+  - path: storage/logs
+    is_directory: true
+    required: true
+```
+
+### Network Connectivity
+
+Verify connectivity to critical services:
+
+```yaml
+network:
+  - url: https://github.com
+    status_code: 200
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Onboarding New Developers">
+    New team members can quickly validate their setup matches the project requirements. Instead of a lengthy setup document, they run `envcheck` and get immediate, actionable feedback.
+  </Accordion>
+  
+  <Accordion title="CI/CD Pipelines">
+    Add envcheck to your CI/CD pipeline to catch environment issues early. Export results to JSON with `--json` flag for easy integration.
+  </Accordion>
+  
+  <Accordion title="Pre-commit Hooks">
+    Run envcheck in Git hooks to ensure developers have the correct environment before committing code.
+  </Accordion>
+  
+  <Accordion title="Microservices">
+    Each service can have its own `.envcheck.yaml` to validate service-specific requirements independently.
+  </Accordion>
+</AccordionGroup>
+
+## Clean, Actionable Output
+
+envcheck provides clear, colored terminal output with helpful suggestions when checks fail:
+
+- ✓ Green checkmarks for passing validations
+- ✗ Red X marks for failures with actionable error messages
+- Summary of total issues found
+- Exit code 0 for success, non-zero for failures (perfect for scripts)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Install envcheck" icon="download" href="/installation">
+    Get envcheck installed on your system
+  </Card>
+  
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Run your first environment check in minutes
+  </Card>
+</CardGroup>

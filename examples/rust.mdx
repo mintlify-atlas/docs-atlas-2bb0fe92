@@ -1,0 +1,255 @@
+---
+title: Rust Project
+description: Environment validation for Rust applications
+---
+
+## Overview
+
+This example demonstrates envcheck configuration for a Rust project. It validates the Rust toolchain, optional environment variables for logging and database connectivity, and required Cargo files.
+
+## Configuration
+
+```yaml .envcheck.yaml
+version: "1"
+
+tools:
+  - name: rustc
+    version: ">=1.65.0"
+    required: true
+  - name: cargo
+    required: true
+
+env_vars:
+  - name: RUST_LOG
+    required: false
+  - name: DATABASE_URL
+    required: false
+
+files:
+  - path: Cargo.toml
+    required: true
+  - path: src/main.rs
+    required: false
+  - path: src/lib.rs
+    required: false
+```
+
+## What This Checks
+
+### Tools
+
+- **rustc >=1.65.0**: Ensures you have a modern Rust compiler with the 2021 edition features
+- **cargo**: Validates Rust's package manager and build tool is available
+
+### Environment Variables
+
+- **RUST_LOG** (optional): Controls logging verbosity for applications using `env_logger` or `tracing`
+- **DATABASE_URL** (optional): Connection string for database access when using SQLx or Diesel
+
+### Files
+
+- **Cargo.toml**: Project manifest - required for all Rust projects
+- **src/main.rs** (optional): Binary entry point - checked for application projects
+- **src/lib.rs** (optional): Library entry point - checked for library crates
+
+## Expected Output
+
+<CodeGroup>
+
+```bash Success
+$ envcheck
+
+✓ Tools
+  ✓ rustc: 1.75.0 (>= 1.65.0)
+  ✓ cargo: installed
+
+✓ Environment Variables
+  ✓ RUST_LOG: info
+  ✓ DATABASE_URL: ***
+
+✓ Files
+  ✓ Cargo.toml: exists
+  ✓ src/main.rs: exists
+  ✓ src/lib.rs: not found (optional)
+
+All checks passed!
+```
+
+```bash Missing Toolchain
+$ envcheck
+
+✗ Tools
+  ✗ rustc: 1.60.0 (expected >= 1.65.0)
+  ✓ cargo: installed
+
+✓ Environment Variables
+  (all optional)
+
+✗ Files
+  ✗ Cargo.toml: not found
+  ✓ src/main.rs: not found (optional)
+  ✓ src/lib.rs: not found (optional)
+
+Checks failed!
+```
+
+</CodeGroup>
+
+## Tips for Rust Projects
+
+<Tip>
+Update your Rust toolchain easily with `rustup update`. Use `rustup show` to see your current installed versions.
+</Tip>
+
+<Warning>
+If DATABASE_URL is required for compile-time query checking with SQLx, mark it as `required: true` and set it even in development.
+</Warning>
+
+<Info>
+The configuration checks for both `src/main.rs` and `src/lib.rs` as optional, making it suitable for both binary and library projects.
+</Info>
+
+## Common Variations
+
+### Web API with Actix/Axum
+
+Add web framework requirements:
+
+```yaml
+env_vars:
+  - name: RUST_LOG
+    required: true
+    pattern: "^(trace|debug|info|warn|error)$"
+  - name: DATABASE_URL
+    required: true
+  - name: HOST
+    required: false
+  - name: PORT
+    required: false
+
+ports:
+  - 8080
+
+files:
+  - path: Cargo.toml
+    required: true
+  - path: src/main.rs
+    required: true
+```
+
+### SQLx Database Project
+
+Ensure SQLx compile-time checks work:
+
+```yaml
+tools:
+  - name: rustc
+    version: ">=1.65.0"
+    required: true
+  - name: cargo
+    required: true
+  - name: sqlx-cli
+    required: true
+
+env_vars:
+  - name: DATABASE_URL
+    required: true  # Required for compile-time query verification
+
+files:
+  - path: migrations
+    required: true
+  - path: .sqlx
+    required: false
+```
+
+### Embedded/No-Std Project
+
+Validate cross-compilation toolchain:
+
+```yaml
+tools:
+  - name: rustc
+    version: ">=1.65.0"
+    required: true
+  - name: cargo
+    required: true
+  - name: arm-none-eabi-gcc
+    required: true
+
+files:
+  - path: Cargo.toml
+    required: true
+  - path: memory.x
+    required: true
+  - path: .cargo/config.toml
+    required: true
+```
+
+### Workspace Setup
+
+For multi-crate workspaces:
+
+```yaml
+files:
+  - path: Cargo.toml
+    required: true
+  - path: Cargo.lock
+    required: true
+
+tools:
+  - name: rustc
+    version: ">=1.65.0"
+    required: true
+  - name: cargo
+    required: true
+  - name: cargo-workspaces
+    required: false
+```
+
+### WASM Target
+
+Validate WebAssembly toolchain:
+
+```yaml
+tools:
+  - name: rustc
+    version: ">=1.65.0"
+    required: true
+  - name: cargo
+    required: true
+  - name: wasm-pack
+    required: true
+
+files:
+  - path: Cargo.toml
+    required: true
+  - path: src/lib.rs
+    required: true
+```
+
+## Rust-Specific Considerations
+
+### Logging Levels
+
+RUST_LOG accepts various formats:
+- Simple: `info`, `debug`, `trace`
+- Module-specific: `my_crate=debug,hyper=info`
+- Complex filters: `warn,my_crate::module=trace`
+
+### Database URL Format
+
+Common DATABASE_URL patterns:
+- PostgreSQL: `postgres://user:pass@localhost/db`
+- MySQL: `mysql://user:pass@localhost/db`
+- SQLite: `sqlite://path/to/db.sqlite` or `sqlite::memory:`
+
+### Cargo Configuration
+
+Consider checking `.cargo/config.toml` for projects with custom build configurations, target specifications, or registry settings.
+
+## Learn More
+
+- [Tools Validator](/configuration/tools) - Rust toolchain and cargo tools
+- [Environment Variables](/configuration/environment-variables) - Runtime configuration
+- [File Validator](/configuration/files) - Project structure validation
+- [Port Checker](/configuration/ports) - Service port management

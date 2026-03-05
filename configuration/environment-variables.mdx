@@ -1,0 +1,200 @@
+---
+title: Environment Variables
+description: Validate environment variables and their values
+---
+
+## Overview
+
+The `env_vars` section checks for the presence of environment variables and optionally validates their values against regex patterns. This ensures critical configuration values are set before running your application.
+
+## Configuration
+
+Each environment variable check is defined by an `EnvVarCheck` struct (src/config.rs:31) with the following fields:
+
+<ParamField path="name" type="string" required>
+  The name of the environment variable to check.
+</ParamField>
+
+<ParamField path="required" type="boolean" default="true">
+  Whether the environment variable must be set. If `true`, validation fails when the variable is not defined.
+</ParamField>
+
+<ParamField path="pattern" type="string" optional>
+  A regex pattern to validate the variable's value. If specified, the value must match this pattern.
+</ParamField>
+
+## Examples
+
+### Basic Presence Check
+
+Check that an environment variable is set:
+
+```yaml
+env_vars:
+  - name: DATABASE_URL
+    required: true
+```
+
+### Optional Variables
+
+Mark variables as optional when they have sensible defaults:
+
+```yaml
+env_vars:
+  - name: NODE_ENV
+    required: false
+  - name: LOG_LEVEL
+    required: false
+```
+
+### Pattern Validation
+
+Validate that environment variable values match expected formats:
+
+```yaml
+env_vars:
+  - name: RAILS_ENV
+    required: false
+    pattern: "^(development|test|production)$"
+  
+  - name: DEBUG
+    required: false
+    pattern: "^(True|False|1|0)$"
+  
+  - name: PORT
+    required: true
+    pattern: "^[0-9]{1,5}$"
+```
+
+## Real-World Examples
+
+<CodeGroup>
+
+```yaml Node.js Project
+version: "1"
+
+env_vars:
+  - name: NODE_ENV
+    required: false
+  - name: DATABASE_URL
+    required: true
+```
+
+```yaml Django Project
+version: "1"
+
+env_vars:
+  - name: SECRET_KEY
+    required: true
+  - name: DATABASE_URL
+    required: true
+  - name: DEBUG
+    required: false
+    pattern: "^(True|False|1|0)$"
+```
+
+```yaml Rails Project
+version: "1"
+
+env_vars:
+  - name: DATABASE_URL
+    required: true
+  - name: RAILS_ENV
+    required: false
+    pattern: "^(development|test|production)$"
+```
+
+```yaml Rust Project
+version: "1"
+
+env_vars:
+  - name: RUST_LOG
+    required: false
+  - name: DATABASE_URL
+    required: false
+```
+
+```yaml Go Project
+version: "1"
+
+env_vars:
+  - name: GOPATH
+    required: false
+  - name: GOBIN
+    required: false
+```
+
+</CodeGroup>
+
+## Pattern Syntax
+
+The `pattern` field uses standard regex syntax. Here are common patterns:
+
+### Exact Values
+
+```yaml
+# Must be one of: development, test, production
+pattern: "^(development|test|production)$"
+```
+
+### Boolean Values
+
+```yaml
+# Common boolean representations
+pattern: "^(true|false|1|0|yes|no)$"
+
+# Python-style booleans
+pattern: "^(True|False|1|0)$"
+```
+
+### Numeric Ranges
+
+```yaml
+# Port numbers (1-65535)
+pattern: "^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
+
+# Simple 1-5 digit number
+pattern: "^[0-9]{1,5}$"
+```
+
+### URL Validation
+
+```yaml
+# Simple URL pattern
+pattern: "^https?://.*"
+
+# Database URL
+pattern: "^postgres(ql)?://.*"
+```
+
+### Custom Formats
+
+```yaml
+# Alphanumeric only
+pattern: "^[a-zA-Z0-9]+$"
+
+# Semantic version
+pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+```
+
+<Note>
+Remember to escape backslashes in YAML strings. Use `\\` for a single backslash in regex patterns.
+</Note>
+
+## Default Behavior
+
+From the struct definition in src/config.rs:31:
+
+- `name`: Required field, no default
+- `required`: Defaults to `true`
+- `pattern`: Defaults to `None` (no pattern validation)
+
+<Warning>
+When `required: true`, validation fails if:
+- The environment variable is not set
+- The variable is set but its value doesn't match the `pattern` (if specified)
+</Warning>
+
+<Tip>
+Use `required: false` with a `pattern` to validate optional variables only when they're set. This allows developers to omit the variable entirely while ensuring correct values when provided.
+</Tip>
