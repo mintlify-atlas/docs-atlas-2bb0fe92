@@ -200,25 +200,24 @@ Example JSON output:
 
 ```json
 {
-  "checks": [
+  "results": [
     {
-      "type": "tool",
-      "name": "node",
-      "status": "pass",
-      "version": "18.17.0"
+      "status": "success",
+      "message": "node 18.17.0 found",
+      "suggestion": null
     },
     {
-      "type": "env_var",
-      "name": "DATABASE_URL",
-      "status": "fail",
-      "message": "DATABASE_URL is not set"
+      "status": "error",
+      "message": "DATABASE_URL is not set",
+      "suggestion": "Set DATABASE_URL environment variable"
     }
   ],
   "summary": {
-    "total": 5,
-    "passed": 4,
-    "failed": 1
-  }
+    "errors": 1,
+    "warnings": 0,
+    "successes": 4
+  },
+  "passed": false
 }
 ```
 
