@@ -1,0 +1,89 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "envcheck",
+  "projectDescription": "A fast, declarative CLI tool for validating development environments with support for tools, versions, environment variables, and ports.",
+  "theme": "aspen",
+  "primaryColor": "#94cb04",
+  "lightColor": "#545454",
+  "darkColor": null,
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Configuration",
+        "pages": [
+          "configuration/overview",
+          "configuration/tools",
+          "configuration/environment-variables",
+          "configuration/ports",
+          "configuration/files",
+          "configuration/network"
+        ]
+      },
+      {
+        "group": "CLI Reference",
+        "pages": [
+          "cli/commands",
+          "cli/options",
+          "cli/exit-codes"
+        ]
+      },
+      {
+        "group": "Examples",
+        "pages": [
+          "examples/nodejs",
+          "examples/python",
+          "examples/rust",
+          "examples/go",
+          "examples/rails"
+        ]
+      },
+      {
+        "group": "Advanced",
+        "pages": [
+          "advanced/ci-cd",
+          "advanced/json-output",
+          "advanced/troubleshooting"
+        ]
+      },
+      {
+        "group": "Contributing",
+        "pages": [
+          "contributing/overview",
+          "contributing/development-setup",
+          "contributing/adding-validators"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Fast environment validation written in Rust",
+    "Tool and version checking with semver support",
+    "Environment variable validation with regex patterns",
+    "Port availability checking",
+    "File and directory validation with permissions",
+    "Network connectivity checking",
+    "JSON output for CI/CD integration",
+    "Simple YAML configuration"
+  ],
+  "publicApiSurface": [
+    "envcheck (main command)",
+    "envcheck init (initialize configuration)",
+    "envcheck --json (JSON output)",
+    "envcheck --config <path> (custom config path)",
+    "envcheck --verbose (verbose output)",
+    ".envcheck.yaml (configuration file)",
+    "tools[] (tool validation config)",
+    "env_vars[] (environment variable config)",
+    "ports[] (port availability config)",
+    "files[] (file/directory config)",
+    "network[] (network connectivity config)"
+  ]
+}
